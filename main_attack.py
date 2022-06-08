@@ -155,8 +155,10 @@ def train_optimizer_attack(args):
         test_loss_ratio = 0.0
         num = 0
         for test_idx, (test_data, test_target) in enumerate(tqdm(test_loader, desc='Testing optimizer', leave=False)):
-            if test_idx >= args.max_test_during_training: break
-            
+            if test_idx >= args.max_test_during_training:
+                num = 1
+                break
+
             test_data = set_precision(test_data, args.precision)
             test_data, test_target = Variable(test_data), Variable(test_target)
             if args.cuda:
@@ -589,7 +591,7 @@ if __name__ == "__main__":
                         help='use zeroth-order method to train the zeroth-order optimizer')
     parser.add_argument('--precision', type=str, choices=['half', 'full', 'double'],
                         default='double', help='precision')
-    parser.add_argument('--max_test_during_training', type=int, default=20,
+    parser.add_argument('--max_test_during_training', type=int, default=100,
                         help='Maximum number of test attactks during training')
 
     args = parser.parse_args()
