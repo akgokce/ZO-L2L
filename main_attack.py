@@ -16,6 +16,7 @@ from torch import autograd
 import train_task_list
 import optimizee
 import nn_optimizer
+import wandb
 
 
 def cycle(iterable):
@@ -27,6 +28,16 @@ def cycle(iterable):
 def train_optimizer_attack(args):
     assert "Attack" in args.train_task
     task = train_task_list.tasks[args.train_task]
+
+    # Logging
+    wandb.init(
+        tags=None,
+        project='ZOL2L', 
+        entity='akgokce', 
+        name=args.exp_name, 
+        #id=f'{args.name}_{args.id}',
+        config=args
+        )
 
     print("Training ZO optimizer...\nOptimizer: {}. Optimizee: {}".format(task["nn_optimizer"].__name__, task["optimizee"].__name__))
 
@@ -156,6 +167,13 @@ def train_optimizer_attack(args):
         print(msg)
         with open(os.path.join(args.output_dir, "train_log.txt"), 'a+') as f:
             f.write(msg + '\n')
+
+        wandb.log({
+            'final_loss': final_loss / args.updates_per_epoch, 
+            'average_final_initial_loss_ratio': decrease_in_loss / args.updates_per_epoch,
+            'test_loss': test_loss_sum / num,
+            'test_loss_ratio': test_loss_ratio / num,
+        })
 
         if epoch % args.epochs_per_ckpt == 0:
             meta_optimizer.save(epoch, args.output_dir)
