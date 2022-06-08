@@ -3,8 +3,8 @@ source /om2/user/akgokce/anaconda/etc/profile.d/conda.sh
 conda activate zol2l
 
 python main_attack.py \
-    --exp_name ZO_attack_mnist_finite_diff \
+    --exp_name ZO_attack_mnist_fp32 \
     --train_task ZOL2L-Attack \
     --gpu_num 0 \
     --train optimizer_attack \
-    --use_finite_diff
+    --precision full

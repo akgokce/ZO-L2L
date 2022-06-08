@@ -147,7 +147,7 @@ class MnistAttack(optimizee.Optimizee):
             loss_distort = ((self.data_denormalize(x_attack) - self.data_denormalize(x)) ** 2).sum()
 
         pred_scores = self.attack_model.model(x_attack)  # log likelyhood: (B, 10)
-        tgt_onehot = F.one_hot(tgt, num_classes=10).double()  # (B, 10)
+        tgt_onehot = F.one_hot(tgt, num_classes=10).type(pred_scores.dtype)  # (B, 10)
 
         correct_log_prob, correct_indices = torch.max(pred_scores - 1e9 * (1 - tgt_onehot), dim=1)
         assert torch.equal(correct_indices, tgt), (
@@ -179,7 +179,7 @@ class MnistAttack(optimizee.Optimizee):
                 loss_distort = ((self.data_denormalize(x_attack) - self.data_denormalize(x)) ** 2).sum()
 
             pred_scores = self.attack_model.model(x_attack)  # log likelyhood: (B, 10)
-            tgt_onehot = F.one_hot(tgt, num_classes=10).double()  # (B, 10)
+            tgt_onehot = F.one_hot(tgt, num_classes=10).type(pred_scores.dtype)  # (B, 10)
 
             correct_log_prob, correct_indices = torch.max(pred_scores - 1e9 * (1 - tgt_onehot), dim=1)
             assert torch.equal(correct_indices, tgt), (
@@ -211,7 +211,7 @@ class MnistAttack(optimizee.Optimizee):
                 x_attack.view(-1, x_attack_shape[2], x_attack_shape[3], x_attack_shape[4])).view(x_attack_shape[0],
                                                                                                  x_attack_shape[1],
                                                                                                  10)  # log likelyhood: (B_weight, B, 10)
-            tgt_onehot = F.one_hot(tgt, num_classes=10).double().unsqueeze(1)  # (1, B, 10)
+            tgt_onehot = F.one_hot(tgt, num_classes=10).type(pred_scores.dtype).unsqueeze(1)  # (1, B, 10)
 
             correct_log_prob, correct_indices = torch.max(pred_scores - 1e9 * (1 - tgt_onehot), dim=2)  # (B_weight, B)
             assert torch.equal(correct_indices, tgt.expand_as(correct_indices)), (

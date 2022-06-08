@@ -16,7 +16,10 @@ from torch import autograd
 import train_task_list
 import optimizee
 import nn_optimizer
+
+from utils import set_precision, set_default_precision
 import wandb
+from tqdm import tqdm
 
 
 def cycle(iterable):
@@ -42,6 +45,7 @@ def train_optimizer_attack(args):
     print("Training ZO optimizer...\nOptimizer: {}. Optimizee: {}".format(task["nn_optimizer"].__name__, task["optimizee"].__name__))
 
     attack_model = task["attack_model"]()  # targeted model to attack
+    attack_model = set_precision(attack_model, args.precision)
     if args.cuda:
         attack_model.cuda(args.gpu_num)
     ckpt_dict = torch.load(task["attack_model_ckpt"], map_location='cpu')
@@ -50,6 +54,7 @@ def train_optimizer_attack(args):
     attack_model.reset()  # not include parameters
 
     meta_model = task["optimizee"](optimizee.AttackModel(attack_model), task['batch_size'])  # meta optimizer
+    meta_model = set_precision(meta_model, args.precision)
     if args.cuda:
         meta_model.cuda(args.gpu_num)
     train_loader, test_loader = meta_model.dataset_loader(args.data_dir, task['batch_size'], task['test_batch_size'])
@@ -60,42 +65,46 @@ def train_optimizer_attack(args):
     else:
         meta_optimizer = task["nn_optimizer"](optimizee.MetaModel(meta_model), args)
 
+    meta_optimizer = set_precision(meta_optimizer, args.precision)
     if args.cuda:
         meta_optimizer.cuda(args.gpu_num)
     optimizer = optim.Adam(meta_optimizer.parameters(), lr=task['lr'])
 
     min_test_loss = float("inf")
 
-    for epoch in range(1, task["max_epoch"] + 1):
+    for epoch in tqdm(range(1, task["max_epoch"] + 1), desc='Epoch'):
         decrease_in_loss = 0.0
         final_loss = 0.0
         meta_optimizer.train()
-        for i in range(args.updates_per_epoch):
+        for i in tqdm(range(args.updates_per_epoch), desc='Training optimizer', leave=False):
             # The `optimizee` for attack task
             model = task["optimizee"](optimizee.AttackModel(attack_model), task['batch_size'])
+            model = set_precision(model, args.precision)
             if args.cuda:
                 model.cuda(args.gpu_num)
 
             # In the attack task, each attacked image corresponds to a particular optmizee model
             data, target = next(train_loader)
-            data, target = Variable(data.double()), Variable(target)
+            data = set_precision(data, args.precision)
+            data, target = Variable(data), Variable(target)
             if args.cuda:
                 data, target = data.cuda(args.gpu_num), target.cuda(args.gpu_num)
 
             # Compute initial loss of the model
-            f_x = model(data.double())
+            f_x = model(data)
             initial_loss = model.loss(f_x, target)
 
-            for k in range(task['optimizer_steps'] // args.truncated_bptt_step):
+            for k in tqdm(range(task['optimizer_steps'] // args.truncated_bptt_step), desc='Optimizer steps', leave=False):
                 # Keep states for truncated BPTT
                 meta_optimizer.reset_state(
                     keep_states=k > 0, model=model, use_cuda=args.cuda, gpu_num=args.gpu_num)
 
                 loss_sum = 0
                 prev_loss = torch.zeros(1)
+                prev_loss = set_precision(prev_loss, args.precision)
                 if args.cuda:
                     prev_loss = prev_loss.cuda(args.gpu_num)
-                for j in range(args.truncated_bptt_step):
+                for j in tqdm(range(args.truncated_bptt_step), desc='TBPTT steps', leave=False):
                     # Perfom a meta update using gradients from model
                     # and return the current meta model saved in the nn_optimizer
                     meta_model, *_ = meta_optimizer.meta_update(model, data, target)
@@ -132,35 +141,48 @@ def train_optimizer_attack(args):
             decrease_in_loss += loss.item() / initial_loss.item()
             final_loss += loss.item()
 
+            # msg = "\nEpoch: {}, initial loss: {}, final loss: {}, average final/initial loss ratio: {}\n".format(
+            #     epoch,
+            #     initial_loss.item(),
+            #     final_loss / args.updates_per_epoch,
+            #     decrease_in_loss / args.updates_per_epoch
+            #     )
+            # print(msg)
+
         # test
         meta_optimizer.eval()
         test_loss_sum = 0.0
         test_loss_ratio = 0.0
         num = 0
-        for (test_data, test_target) in test_loader:
-            test_data, test_target = Variable(test_data.double()), Variable(test_target)
+        for test_idx, (test_data, test_target) in enumerate(tqdm(test_loader, desc='Testing optimizer', leave=False)):
+            if test_idx >= args.max_test_during_training: break
+            
+            test_data = set_precision(test_data, args.precision)
+            test_data, test_target = Variable(test_data), Variable(test_target)
             if args.cuda:
                 test_data, test_target = test_data.cuda(args.gpu_num), test_target.cuda(args.gpu_num)
             model = task["optimizee"](optimizee.AttackModel(attack_model), task['test_batch_size'])
+            model = set_precision(model, args.precision)
             if args.cuda:
                 model.cuda(args.gpu_num)
             # Compute initial loss of the model
-            f_x = model(test_data.double())
+            f_x = model(test_data)
             test_initial_loss = model.loss(f_x, test_target)
             test_loss = 0.0
 
             meta_optimizer.reset_state(
                 keep_states=False, model=model, use_cuda=args.cuda, gpu_num=args.gpu_num)
 
-            for _ in range(task["test_optimizer_steps"]):
+            for _ in tqdm(range(task["test_optimizer_steps"]), desc='Test steps', leave=False):
                 _, test_loss, _ = meta_optimizer.meta_update(model, test_data, test_target)
 
             test_loss_sum += test_loss
             test_loss_ratio += test_loss / test_initial_loss
             num += 1
 
-        msg = "Epoch: {}, final loss {}, average final/initial loss ratio: {}, test loss {}, test loss ratio {}".format(
+        msg = "\nEpoch: {}, initial loss: {}, final loss: {}, average final/initial loss ratio: {}, test loss: {}, test loss ratio: {}".format(
             epoch,
+            initial_loss.item(),
             final_loss / args.updates_per_epoch,
             decrease_in_loss / args.updates_per_epoch,
             test_loss_sum / num, test_loss_ratio / num)
@@ -192,6 +214,7 @@ def optimizer_train_optimizee_attack(args):
         attack_model.cuda(args.gpu_num)
     ckpt_dict = torch.load(task["attack_model_ckpt"], map_location='cpu')
     attack_model.load_state_dict(ckpt_dict)
+    attack_model = set_precision(attack_model, args.precision)
     attack_model.eval()
     attack_model.reset()  # not include parameters
 
@@ -203,11 +226,13 @@ def optimizer_train_optimizee_attack(args):
         for _ in range(test_idx):  # attacked image
             data, target = next(test_loader)
 
-        data, target = Variable(data.double()), Variable(target)
+        data = set_precision(data, args.precision)
+        data, target = Variable(data), Variable(target)
         if args.cuda:
             data, target = data.cuda(args.gpu_num), target.cuda(args.gpu_num)
 
         meta_model = task["tests"]["optimizee"](optimizee.AttackModel(attack_model), task['tests']['test_batch_size'])
+        meta_model = set_precision(meta_model, args.precision)
         if args.cuda:
             meta_model.cuda(args.gpu_num)
 
@@ -216,6 +241,7 @@ def optimizer_train_optimizee_attack(args):
         # ZO-LSTM (leanred ZO optimizer)
         if "nn_opt" in task["tests"]:
             meta_optimizer = task["nn_optimizer"](optimizee.MetaModel(meta_model), args)
+            meta_optimizer = set_precision(meta_optimizer, args.precision)
             if args.cuda:
                 meta_optimizer.cuda(args.gpu_num)
             meta_optimizer.load(ckpt_path)
@@ -244,10 +270,12 @@ def optimizer_train_optimizee_attack(args):
         # ZO-LSTM-no-query (without QueryRNN)
         if "nn_opt_no_query" in task["tests"]:
             meta_model_2 = task["tests"]["optimizee"](optimizee.AttackModel(attack_model), task['tests']['test_batch_size'])
+            meta_model_2 = set_precision(meta_model_2, args.precision)
             if args.cuda:
                 meta_model_2.cuda(args.gpu_num)
 
             nn_optimizer_no_query = task["tests"]["nn_opt_no_query"](optimizee.MetaModel(meta_model_2), args)
+            nn_optimizer_no_query = set_precision(nn_optimizer_no_query, args.precision)
             if args.cuda:
                 nn_optimizer_no_query.cuda(args.gpu_num)
             nn_optimizer_no_query.load(ckpt_path)
@@ -257,10 +285,12 @@ def optimizer_train_optimizee_attack(args):
         # ZO-LSTM-no-update (without UpdateRNN)
         if "nn_opt_no_update" in task["tests"]:
             meta_model_3 = task["tests"]["optimizee"](optimizee.AttackModel(attack_model), task['tests']['test_batch_size'])
+            meta_model_3 = set_precision(meta_model_3, args.precision)
             if args.cuda:
                 meta_model_3.cuda(args.gpu_num)
 
             nn_optimizer_no_update = task["tests"]["nn_opt_no_update"](optimizee.MetaModel(meta_model_3), args)
+            nn_optimizer_no_update = set_precision(nn_optimizer_no_update, args.precision)
             if args.cuda:
                 nn_optimizer_no_update.cuda(args.gpu_num)
             nn_optimizer_no_update.load(ckpt_path)
@@ -270,10 +300,12 @@ def optimizer_train_optimizee_attack(args):
         # ZO-LSTM-guided (use Guided-ES to modify search distribution)
         if "nn_opt_guided" in task["tests"]:
             meta_model_4 = task["tests"]["optimizee"](optimizee.AttackModel(attack_model), task['tests']['test_batch_size'])
+            meta_model_4 = set_precision(meta_model_4, args.precision)
             if args.cuda:
                 meta_model_4.cuda(args.gpu_num)
 
             nn_optimizer_guided = task["tests"]["nn_opt_guided"](optimizee.MetaModel(meta_model_4), args)
+            nn_optimizer_guided = set_precision(nn_optimizer_guided, args.precision)
             if args.cuda:
                 nn_optimizer_guided.cuda(args.gpu_num)
             nn_optimizer_guided.load(ckpt_path)
@@ -282,6 +314,7 @@ def optimizer_train_optimizee_attack(args):
 
         for num in range(1, task["tests"]["test_num"] + 1):
             model = task["tests"]["optimizee"](optimizee.AttackModel(attack_model), task['tests']['test_batch_size'])
+            model = set_precision(model, args.precision)
             if args.cuda:
                 model.cuda(args.gpu_num)
 
@@ -554,6 +587,10 @@ if __name__ == "__main__":
     parser.add_argument('--fig_preffix', type=str, default='loss')
     parser.add_argument('--use_finite_diff', action='store_true',
                         help='use zeroth-order method to train the zeroth-order optimizer')
+    parser.add_argument('--precision', type=str, choices=['half', 'full', 'double'],
+                        default='double', help='precision')
+    parser.add_argument('--max_test_during_training', type=int, default=20,
+                        help='Maximum number of test attactks during training')
 
     args = parser.parse_args()
     args.cuda = not args.no_cuda and torch.cuda.is_available()
@@ -564,4 +601,5 @@ if __name__ == "__main__":
         os.makedirs(args.output_dir)
         os.chmod(args.output_dir, 0o775)
 
+    set_default_precision(args.precision)
     main(args)
