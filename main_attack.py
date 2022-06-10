@@ -43,14 +43,6 @@ def train_optimizer_nn_scratch(args):
         )
     """
     print("Training ZO optimizer...\nOptimizer: {}. Optimizee: {}".format(task["nn_optimizer"].__name__, task["nn_to_be_trained"].__name__))
-    attack_model = task["attack_model"]()  # targeted model to attack
-    attack_model = set_precision(attack_model, args.precision)
-    
-    if args.cuda:
-        attack_model.cuda(args.gpu_num)
-        
-    attack_model.eval()
-    attack_model.reset()  # not include parameters
     
     #meta_model = task["optimizee"](optimizee.AttackModel(attack_model), task['batch_size'])  # target model to be trained
     meta_model = task["nn_to_be_trained"](task['batch_size'])  # target model to be trained (nn scratch)
@@ -97,29 +89,7 @@ def train_optimizer_nn_scratch(args):
             # Compute initial loss of the model
             f_x = model(data) ##feed our model the data
             
-            #y_pred = copy.deepcopy(f_x).cpu()
-            #y_true = copy.deepcopy(target).cpu()
             initial_loss = model.loss(f_x, target) ##using nondifferentiable loss
-            #initial_loss = model.loss(y_pred, y_true) ##using nondifferentiable loss
-
-            #params = []
-            #my_weight = torch.nn.Parameter(torch.zeros((batch_size, channel, width, height)))
-            
-            #for param in meta_model.parameters():
-              #params.append(param)
-              #print(type(param),param.size())
-            #xxx =list(meta_model.parameters())
-            #print(type(xxx))
-            
-            #meta_model_parameters = torch.nn.Parameter(torch.tensor(params))
-            #meta_model_parameters = torch.nn.Parameter(torch.tensor(list(meta_model.parameters())))
-            #non_diff_initial_loss = optimizee.custom_loss(meta_model_parameters, f_x, target, meta_model.loss)
-            
-            #print(non_diff_initial_loss)
-            #print(non_diff_initial_loss)
-            #time.sleep(5)
-            #print(non_diff_initial_loss)
-            #time.sleep(5)
             
             for k in tqdm(range(task['optimizer_steps'] // args.truncated_bptt_step), desc='Optimizer steps', leave=False):
                 # Keep states for truncated BPTT
@@ -148,17 +118,13 @@ def train_optimizer_nn_scratch(args):
                         # Approximate the gradient
                         
                         #loss = optimizee.custom_loss(meta_model.weight, data, target, meta_model.nondiff_loss)
-                        #loss = optimizee.custom_loss(meta_model.weight, data, target, meta_model.loss)
-                        params = []
-                        for param in meta_model.parameters():
-                          params.append(param)
-                          
-                        meta_model_parameters = torch.nn.Parameter(params)
+
+                        meta_model_parameters = meta_model.get_flat_params()
                         
-                        non_diff_initial_loss = optimizee.custom_loss(meta_model_parameters, f_x, target, meta_model.loss)
+                        loss = optimizee.custom_loss(meta_model_parameters, data, target, meta_model.nondiff_loss)
 
 
-                    loss.requires_grad = True
+                    #loss.requires_grad = True
                     loss_sum += (k * args.truncated_bptt_step + j) * (loss - Variable(prev_loss))
                     prev_loss = loss.data
 
@@ -169,16 +135,8 @@ def train_optimizer_nn_scratch(args):
 
                 # Update the parameters of the meta nn_optimizer
                 
-                """
-                print(loss_sum)
-                print(loss_sum)
-                time.sleep(5)
-                print(loss_sum)
-                time.sleep(5)
-                """
-                
                 meta_optimizer.zero_grad()
-                loss_sum.backward()
+                loss_sum.backward() ##compute gradients of the loss
                 for name, param in meta_optimizer.named_parameters():
                     if param.requires_grad:
                         param.grad.data.clamp_(-1, 1)
@@ -300,6 +258,9 @@ def train_optimizer_attack(args):
     min_test_loss = float("inf")
 
     for epoch in tqdm(range(1, task["max_epoch"] + 1), desc='Epoch'):
+          
+        time.sleep(4)
+        
         decrease_in_loss = 0.0
         final_loss = 0.0
         meta_optimizer.train()
@@ -321,16 +282,6 @@ def train_optimizer_attack(args):
             f_x = model(data)
             initial_loss = model.loss(f_x, target)
             
-            #print(type(model.weight))
-            print(model.weight.size())
-            #time.sleep(10)
-            """
-            print(initial_loss)
-            print(initial_loss)
-            time.sleep(5)
-            print(initial_loss)
-            time.sleep(5)
-                """
             for k in tqdm(range(task['optimizer_steps'] // args.truncated_bptt_step), desc='Optimizer steps', leave=False):
                 # Keep states for truncated BPTT
                 meta_optimizer.reset_state(
@@ -344,7 +295,7 @@ def train_optimizer_attack(args):
                 for j in tqdm(range(args.truncated_bptt_step), desc='TBPTT steps', leave=False):
                     # Perfom a meta update using gradients from model
                     # and return the current meta model saved in the nn_optimizer
-                    meta_model, *_ = meta_optimizer.meta_update(model, data, target)
+                    meta_model, *_ = meta_optimizer.meta_update(model, data, target) ##use meta optimizer to update meta_model
 
                     # Compute a loss for a step the meta nn_optimizer
                     if not args.use_finite_diff:
@@ -356,6 +307,7 @@ def train_optimizer_attack(args):
                         # Use zeroth-order method to train the zeroth-order optimizer
                         # Approximate the gradient
                         loss = optimizee.custom_loss(meta_model.weight, data, target, meta_model.nondiff_loss)
+                        time.sleep(5)
 
                     loss_sum += (k * args.truncated_bptt_step + j) * (loss - Variable(prev_loss))
                     prev_loss = loss.data
@@ -366,15 +318,12 @@ def train_optimizer_attack(args):
                         loss_sum += meta_optimizer.grad_reg_loss
 
                 # Update the parameters of the meta nn_optimizer
-                """
-                print(loss_sum)
-                print(loss_sum)
-                time.sleep(5)
-                print(loss_sum)
-                time.sleep(5)
-                """
+                
                 meta_optimizer.zero_grad()
+                #print(loss_sum)
+                #time.sleep(5)
                 loss_sum.backward()
+                
                 for name, param in meta_optimizer.named_parameters():
                     if param.requires_grad:
                         param.grad.data.clamp_(-1, 1)
@@ -852,4 +801,5 @@ if __name__ == "__main__":
     set_default_precision(args.precision)
     main(args)
 
-##python main_attack.py --exp_name NN-SCRATCH --train_task nn-scratch --gpu_num 0 --train train_optimizer_nn_scratch
+##python main_attack.py --exp_name NN-SCRATCH --train_task nn-scratch --gpu_num 1 --train train_optimizer_nn_scratch --use_finite_diff
+##python main_attack.py --exp_name ZO_attack_mnist --train_task ZOL2L-Attack --gpu_num 0 --train optimizer_attack --use_finite_diff

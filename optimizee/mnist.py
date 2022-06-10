@@ -111,7 +111,17 @@ class MnistCustomModel(MnistModel):
 
         _,m = logit.max(dim=1) ##m i is the index of maximum value
         
-        my_loss = (y_true != m).mean()
+        #print(m)
+        #print(y_true)
+        #my_loss = (y_true != m).sum()
+        #print(my_loss)
+        
+        my_loss_index = (y_true != m).sum()
+
+        tbi = torch.tensor([0,1], requires_grad=True,dtype=torch.float)
+            
+        my_loss = tbi[my_loss_index.item()]
+
         """
         m = logit.cpu().detach().numpy()
         y_pred_np = np.argmax(m,axis=1)
@@ -129,66 +139,54 @@ class MnistCustomModel(MnistModel):
     #def my_loss(self,weight,x,tgt,batch_Weight = False):
     
         
-    def nondiff_loss(self, weight, x, tgt, batch_weight=False):
+    def nondiff_loss(self, weight, x, y_true, batch_weight=False):
         if not batch_weight:
-            x_ = x
-            x = x * 0.3081 + 0.1307  # [0, 1]
+        
+            self.set_flat_params(weight)
 
-            fx = x + weight
-            fx.clamp_(0.0, 1.0)
+            x = F.relu(self.conv1(x))
+            x = F.max_pool2d(x, 2, 2)
+            x = F.relu(self.conv2(x))
+            x = F.max_pool2d(x, 2, 2)
+            x = x.view(-1, 4 * 4 * 50)
+            x = F.relu(self.fc1(x))
+            x = self.fc2(x)
+            
+            logit = F.log_softmax(x, dim=1)
 
-            fx = (fx - 0.1307) / 0.3081
+            _,m = logit.max(dim=1) ##m i is the index of maximum value
+            
+            my_loss_index = (y_true != m).sum()
 
-            x_attack, x = fx, x_
-
-            if self.loss_type == "l1":
-                loss_distort = ((self.data_denormalize(x_attack) - self.data_denormalize(x)).abs()).sum()
-            elif self.loss_type == "l2":
-                loss_distort = ((self.data_denormalize(x_attack) - self.data_denormalize(x)) ** 2).sum()
-
-            pred_scores = self.attack_model.model(x_attack)  # log likelyhood: (B, 10)
-            tgt_onehot = F.one_hot(tgt, num_classes=10).type(pred_scores.dtype)  # (B, 10)
-
-            correct_log_prob, correct_indices = torch.max(pred_scores - 1e9 * (1 - tgt_onehot), dim=1)
-            assert torch.equal(correct_indices, tgt), (
-                correct_indices, tgt, pred_scores, x_attack, x, self.attack_model.model.state_dict())
-            max_wrong_log_prob, max_wrong_indices = torch.max(pred_scores - 1e9 * tgt_onehot, dim=1)
-            loss_attack = torch.max(correct_log_prob - max_wrong_log_prob, max_wrong_log_prob.new_ones(()) * -self.gap)
-            loss_attack = loss_attack.mean()
-
-            return (loss_attack + self.c * loss_distort) * self.bs
+            tbi = torch.tensor([0,1], requires_grad=True,dtype=torch.float)
+            
+            my_loss = tbi[my_loss_index.item()]
+            
+            return my_loss
         else:
             x_ = x.unsqueeze(0)  # (1, B, *)
-            x = x * 0.3081 + 0.1307  # [0, 1]
+            self.set_flat_params(weight)
 
-            fx = x + weight  # (B_weight, B, *)
-            fx.clamp_(0.0, 1.0)
+            x = F.relu(self.conv1(x))
+            x = F.max_pool2d(x, 2, 2)
+            x = F.relu(self.conv2(x))
+            x = F.max_pool2d(x, 2, 2)
+            x = x.view(-1, 4 * 4 * 50)
+            x = F.relu(self.fc1(x))
+            x = self.fc2(x)
+            logit = F.log_softmax(x, dim=1)
+            
+            x_attack_shape = logit.size()
 
-            fx = (fx - 0.1307) / 0.3081
+            _,m = logit.max(dim=1) ##m i is the index of maximum value
+            
+            my_loss_index = (y_true != m).sum()
 
-            x_attack, x = fx, x_
-            x_attack_shape = x_attack.size()
+            tbi = torch.tensor([0,1], requires_grad=True,dtype=torch.float)
+            
+            my_loss = tbi[my_loss_index.item()]
 
-            if self.loss_type == "l1":
-                loss_distort = ((self.data_denormalize(x_attack) - self.data_denormalize(x)).abs()).sum(
-                    dim=[1, 2, 3, 4])
-            elif self.loss_type == "l2":
-                loss_distort = ((self.data_denormalize(x_attack) - self.data_denormalize(x)) ** 2).sum(dim=[1, 2, 3, 4])
-
-            pred_scores = self.attack_model.model(
-                x_attack.view(-1, x_attack_shape[2], x_attack_shape[3], x_attack_shape[4])).view(x_attack_shape[0],
-                                                                                                 x_attack_shape[1],
-                                                                                                 10)  # log likelyhood: (B_weight, B, 10)
-            tgt_onehot = F.one_hot(tgt, num_classes=10).type(pred_scores.dtype).unsqueeze(1)  # (1, B, 10)
-
-            correct_log_prob, correct_indices = torch.max(pred_scores - 1e9 * (1 - tgt_onehot), dim=2)  # (B_weight, B)
-            assert torch.equal(correct_indices, tgt.expand_as(correct_indices)), (
-                correct_indices, tgt, pred_scores, x_attack, x, self.attack_model.model.state_dict())
-            max_wrong_log_prob, max_wrong_indices = torch.max(pred_scores - 1e9 * tgt_onehot, dim=2)  # (B_weight, B)
-            loss_attack = torch.max(correct_log_prob - max_wrong_log_prob, max_wrong_log_prob.new_ones(()) * -self.gap)
-            loss_attack = loss_attack.mean(dim=1)
-
-            return (loss_attack + self.c * loss_distort) * self.bs
+            return my_loss
             
     def dont_use_loss(self, fx, tgt, return_tuple=False):
         assert isinstance(fx, tuple)
@@ -334,7 +332,7 @@ class MnistAttack(optimizee.Optimizee):
 
             return (loss_attack + self.c * loss_distort) * self.bs
         else:
-            x_ = x.unsqueeze(0)  # (1, B, *)
+            x_ = x.unsqueeze(0)  # (1, B, *) ##
             x = x * 0.3081 + 0.1307  # [0, 1]
 
             fx = x + weight  # (B_weight, B, *)
@@ -343,7 +341,7 @@ class MnistAttack(optimizee.Optimizee):
             fx = (fx - 0.1307) / 0.3081
 
             x_attack, x = fx, x_
-            x_attack_shape = x_attack.size()
+            x_attack_shape = x_attack.size() ##
 
             if self.loss_type == "l1":
                 loss_distort = ((self.data_denormalize(x_attack) - self.data_denormalize(x)).abs()).sum(
