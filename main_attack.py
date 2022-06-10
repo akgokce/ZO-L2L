@@ -6,6 +6,8 @@ import numpy as np
 import random
 from matplotlib import pyplot as plt
 
+import time
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -27,7 +29,232 @@ def cycle(iterable):
         for x in iterable:
             yield x
 
+def train_optimizer_nn_scratch(args):
+    assert "scratch" in args.train_task
+    task = train_task_list.tasks[args.train_task]
+    """
+    wandb.init(
+        tags=None,
+        project='ZOL2L', 
+        entity='akgokce', 
+        name=args.exp_name, 
+        #id=f'{args.name}_{args.id}',
+        config=args
+        )
+    """
+    print("Training ZO optimizer...\nOptimizer: {}. Optimizee: {}".format(task["nn_optimizer"].__name__, task["nn_to_be_trained"].__name__))
+    attack_model = task["attack_model"]()  # targeted model to attack
+    attack_model = set_precision(attack_model, args.precision)
+    
+    if args.cuda:
+        attack_model.cuda(args.gpu_num)
+        
+    attack_model.eval()
+    attack_model.reset()  # not include parameters
+    
+    #meta_model = task["optimizee"](optimizee.AttackModel(attack_model), task['batch_size'])  # target model to be trained
+    meta_model = task["nn_to_be_trained"](task['batch_size'])  # target model to be trained (nn scratch)
+    meta_model = set_precision(meta_model, args.precision)
+    
+    if args.cuda:
+        meta_model.cuda(args.gpu_num)
+        
+    train_loader, test_loader = meta_model.dataset_loader(args.data_dir, task['batch_size'], task['test_batch_size'])
+    train_loader = iter(cycle(train_loader))
+    
+    if args.warm_start_ckpt != "None":
+        meta_optimizer = task["nn_optimizer"](optimizee.MetaModel(meta_model), args, ckpt_path=args.warm_start_ckpt) ##ready meta optimizer (UpdateRNN)
+    else:
+        meta_optimizer = task["nn_optimizer"](optimizee.MetaModel(meta_model), args)
+        
+    meta_optimizer = set_precision(meta_optimizer, args.precision) ##optimize meta_optimizer (UpdateRNN) with Adam. optimize meta_model (nn_scratch) with meta_optimizer (UpdateRNN)
+    if args.cuda:
+        meta_optimizer.cuda(args.gpu_num)
+    optimizer = optim.Adam(meta_optimizer.parameters(), lr=task['lr'])
 
+    min_test_loss = float("inf")
+    
+    for epoch in tqdm(range(1, task["max_epoch"] + 1), desc='Epoch'):
+        decrease_in_loss = 0.0
+        final_loss = 0.0
+        meta_optimizer.train() ##gonna train meta_optimizer. hope it is both trained, and it is able to train the nn.
+        for i in tqdm(range(args.updates_per_epoch), desc='Training optimizer', leave=False):
+            # The `optimizee` for attack task
+            #model = task["optimizee"](optimizee.AttackModel(attack_model), task['batch_size']) # target model to be trained
+            model = task["nn_to_be_trained"](task['batch_size']) # target model to be trained
+            model = set_precision(model, args.precision)
+            if args.cuda:
+                model.cuda(args.gpu_num)
+
+            # In the attack task, each attacked image corresponds to a particular optmizee model
+            data, target = next(train_loader) ######must handle training data and targets   ##train loader gets mapped into data,target. train loader is defined above
+            data = set_precision(data, args.precision)
+            data, target = Variable(data), Variable(target)
+            
+            if args.cuda:
+                data, target = data.cuda(args.gpu_num), target.cuda(args.gpu_num)
+
+            # Compute initial loss of the model
+            f_x = model(data) ##feed our model the data
+            
+            #y_pred = copy.deepcopy(f_x).cpu()
+            #y_true = copy.deepcopy(target).cpu()
+            initial_loss = model.loss(f_x, target) ##using nondifferentiable loss
+            #initial_loss = model.loss(y_pred, y_true) ##using nondifferentiable loss
+
+            #params = []
+            #my_weight = torch.nn.Parameter(torch.zeros((batch_size, channel, width, height)))
+            
+            #for param in meta_model.parameters():
+              #params.append(param)
+              #print(type(param),param.size())
+            #xxx =list(meta_model.parameters())
+            #print(type(xxx))
+            
+            #meta_model_parameters = torch.nn.Parameter(torch.tensor(params))
+            #meta_model_parameters = torch.nn.Parameter(torch.tensor(list(meta_model.parameters())))
+            #non_diff_initial_loss = optimizee.custom_loss(meta_model_parameters, f_x, target, meta_model.loss)
+            
+            #print(non_diff_initial_loss)
+            #print(non_diff_initial_loss)
+            #time.sleep(5)
+            #print(non_diff_initial_loss)
+            #time.sleep(5)
+            
+            for k in tqdm(range(task['optimizer_steps'] // args.truncated_bptt_step), desc='Optimizer steps', leave=False):
+                # Keep states for truncated BPTT
+                meta_optimizer.reset_state(
+                    keep_states=k > 0, model=model, use_cuda=args.cuda, gpu_num=args.gpu_num)
+
+                loss_sum = 0
+                prev_loss = torch.zeros(1)
+                prev_loss = set_precision(prev_loss, args.precision)
+                if args.cuda:
+                    prev_loss = prev_loss.cuda(args.gpu_num)
+                    
+                for j in tqdm(range(args.truncated_bptt_step), desc='TBPTT steps', leave=False):
+                    # Perfom a meta update using gradients from model
+                    # and return the current meta model saved in the nn_optimizer
+                    meta_model, *_ = meta_optimizer.meta_update(model, data, target) ##use optimizer (updaternn) to updte the metamodel (nn scratch)
+
+                    # Compute a loss for a step the meta nn_optimizer
+                    if not args.use_finite_diff:
+                        # Use first-order method to train the zeroth-order optimizer
+                        # (assume the gradient is available in training time)
+                        f_x = meta_model(data)
+                        loss = meta_model.loss(f_x, target)
+                    else:
+                        # Use zeroth-order method to train the zeroth-order optimizer
+                        # Approximate the gradient
+                        
+                        #loss = optimizee.custom_loss(meta_model.weight, data, target, meta_model.nondiff_loss)
+                        #loss = optimizee.custom_loss(meta_model.weight, data, target, meta_model.loss)
+                        params = []
+                        for param in meta_model.parameters():
+                          params.append(param)
+                          
+                        meta_model_parameters = torch.nn.Parameter(params)
+                        
+                        non_diff_initial_loss = optimizee.custom_loss(meta_model_parameters, f_x, target, meta_model.loss)
+
+
+                    loss.requires_grad = True
+                    loss_sum += (k * args.truncated_bptt_step + j) * (loss - Variable(prev_loss))
+                    prev_loss = loss.data
+
+                    if hasattr(meta_optimizer, "reg_loss"):
+                        loss_sum += meta_optimizer.reg_loss
+                    if hasattr(meta_optimizer, "grad_reg_loss"):
+                        loss_sum += meta_optimizer.grad_reg_loss
+
+                # Update the parameters of the meta nn_optimizer
+                
+                """
+                print(loss_sum)
+                print(loss_sum)
+                time.sleep(5)
+                print(loss_sum)
+                time.sleep(5)
+                """
+                
+                meta_optimizer.zero_grad()
+                loss_sum.backward()
+                for name, param in meta_optimizer.named_parameters():
+                    if param.requires_grad:
+                        param.grad.data.clamp_(-1, 1)
+                optimizer.step()
+
+            # Compute relative decrease in the loss function w.r.t initial
+            # value
+            decrease_in_loss += loss.item() / initial_loss.item()
+            final_loss += loss.item()
+
+            # msg = "\nEpoch: {}, initial loss: {}, final loss: {}, average final/initial loss ratio: {}\n".format(
+            #     epoch,
+            #     initial_loss.item(),
+            #     final_loss / args.updates_per_epoch,
+            #     decrease_in_loss / args.updates_per_epoch
+            #     )
+            # print(msg)
+
+        # test
+        meta_optimizer.eval()
+        test_loss_sum = 0.0
+        test_loss_ratio = 0.0
+        num = 0
+        for test_idx, (test_data, test_target) in enumerate(tqdm(test_loader, desc='Testing optimizer', leave=False)):
+            if test_idx >= args.max_test_during_training:
+                num = 1
+                break
+
+            test_data = set_precision(test_data, args.precision)
+            test_data, test_target = Variable(test_data), Variable(test_target)
+            if args.cuda:
+                test_data, test_target = test_data.cuda(args.gpu_num), test_target.cuda(args.gpu_num)
+            #model = task["optimizee"](optimizee.AttackModel(attack_model), task['test_batch_size'])
+            model = task["nn_to_be_trained"](task['test_batch_size'])
+            model = set_precision(model, args.precision)
+            if args.cuda:
+                model.cuda(args.gpu_num)
+            # Compute initial loss of the model
+            f_x = model(test_data)
+            test_initial_loss = model.loss(f_x, test_target)
+            test_loss = 0.0
+
+            meta_optimizer.reset_state(
+                keep_states=False, model=model, use_cuda=args.cuda, gpu_num=args.gpu_num)
+
+            for _ in tqdm(range(task["test_optimizer_steps"]), desc='Test steps', leave=False):
+                _, test_loss, _ = meta_optimizer.meta_update(model, test_data, test_target)
+
+            test_loss_sum += test_loss
+            test_loss_ratio += test_loss / test_initial_loss
+            num += 1
+
+        msg = "\nEpoch: {}, initial loss: {}, final loss: {}, average final/initial loss ratio: {}, test loss: {}, test loss ratio: {}".format(
+            epoch,
+            initial_loss.item(),
+            final_loss / args.updates_per_epoch,
+            decrease_in_loss / args.updates_per_epoch,
+            test_loss_sum / num, test_loss_ratio / num)
+        print(msg)
+        with open(os.path.join(args.output_dir, "train_log.txt"), 'a+') as f:
+            f.write(msg + '\n')
+        """
+        wandb.log({
+            'final_loss': final_loss / args.updates_per_epoch, 
+            'average_final_initial_loss_ratio': decrease_in_loss / args.updates_per_epoch,
+            'test_loss': test_loss_sum / num,
+            'test_loss_ratio': test_loss_ratio / num,
+        })
+        """
+        if epoch % args.epochs_per_ckpt == 0:
+            meta_optimizer.save(epoch, args.output_dir)
+
+        if test_loss_sum < min_test_loss:
+            min_test_loss = test_loss_sum
+            meta_optimizer.save(epoch, args.output_dir, best=True)
+    
 def train_optimizer_attack(args):
     assert "Attack" in args.train_task
     task = train_task_list.tasks[args.train_task]
@@ -93,7 +320,17 @@ def train_optimizer_attack(args):
             # Compute initial loss of the model
             f_x = model(data)
             initial_loss = model.loss(f_x, target)
-
+            
+            #print(type(model.weight))
+            print(model.weight.size())
+            #time.sleep(10)
+            """
+            print(initial_loss)
+            print(initial_loss)
+            time.sleep(5)
+            print(initial_loss)
+            time.sleep(5)
+                """
             for k in tqdm(range(task['optimizer_steps'] // args.truncated_bptt_step), desc='Optimizer steps', leave=False):
                 # Keep states for truncated BPTT
                 meta_optimizer.reset_state(
@@ -129,6 +366,13 @@ def train_optimizer_attack(args):
                         loss_sum += meta_optimizer.grad_reg_loss
 
                 # Update the parameters of the meta nn_optimizer
+                """
+                print(loss_sum)
+                print(loss_sum)
+                time.sleep(5)
+                print(loss_sum)
+                time.sleep(5)
+                """
                 meta_optimizer.zero_grad()
                 loss_sum.backward()
                 for name, param in meta_optimizer.named_parameters():
@@ -564,6 +808,8 @@ def main(args):
         train_optimizer_attack(args)
     elif args.train == "optimizer_train_optimizee_attack":  # use the learned optimizer to train optimizee
         optimizer_train_optimizee_attack(args)
+    elif args.train == "train_optimizer_nn_scratch":  # use the learned optimizer to train optimizee
+        train_optimizer_nn_scratch(args)
 
 
 if __name__ == "__main__":
@@ -574,7 +820,7 @@ if __name__ == "__main__":
     parser.add_argument('--ckpt_path', type=str, help='checkpoint path')
     parser.add_argument('--warm_start_ckpt', type=str, default="None", help='checkpoint path for warm start')
     parser.add_argument('--train', type=str, default="optimizer_attack",
-                        choices=["optimizer_attack", "optimizer_train_optimizee_attack"],
+                        choices=["train_optimizer_nn_scratch","optimizer_attack", "optimizer_train_optimizee_attack"],
                         help='train optimizer or use the learned optimizer to train optimizee')
     parser.add_argument('--train_task', type=str, default="ZOL2L-Attack",
                         choices=train_task_list.tasks.keys(), help='MNIST only support `attack` yet')
@@ -605,3 +851,5 @@ if __name__ == "__main__":
 
     set_default_precision(args.precision)
     main(args)
+
+##python main_attack.py --exp_name NN-SCRATCH --train_task nn-scratch --gpu_num 0 --train train_optimizer_nn_scratch

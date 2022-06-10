@@ -77,6 +77,15 @@ class MetaModel:
 
     def get_flat_params(self):
         params = []
+        """
+        for name, module in self.model.named_modules():
+            if len(module._parameters) != 0:
+                params.append(module._parameters['weight'].view(-1))
+                try:
+                    params.append(module._parameters['bias'].view(-1))
+                except:
+                    pass
+        """
         for name, module in self.model.named_modules():
             if len(module._parameters) != 0:
                 params.append(module._parameters['weight'].view(-1))
@@ -85,6 +94,8 @@ class MetaModel:
                 except:
                     pass
         return torch.cat(params)
+
+
 
     def set_flat_params(self, flat_params):
         # Restore original shapes
@@ -120,12 +131,19 @@ class AttackModel:
 
 
 class CustomLoss(Function):
+    """
     @staticmethod
     def forward(ctx, weight, inputs, tgt, loss_func):
         ctx.loss_func = loss_func
         ctx.save_for_backward(weight, inputs, tgt)
         return loss_func(weight, inputs, tgt)
-
+    """
+    @staticmethod
+    def forward(ctx, weight, fx, tgt, loss_func):
+        ctx.loss_func = loss_func
+        ctx.save_for_backward(weight, fx, tgt)
+        return loss_func(fx, tgt)
+        
     @staticmethod
     def backward(ctx, grad_output):
         loss_func = ctx.loss_func
