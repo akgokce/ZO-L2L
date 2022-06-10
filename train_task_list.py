@@ -61,4 +61,36 @@ tasks = {
             # 'nn_opt_guided': nn_optimizer.zoopt.VarReducedZOOptimizer,
         }
     },
+    # train ZO optimizer (both UpdateRNN and QueryRNN) for EMNIST attack
+    'VarReducedZOL2L-Attack-EMNIST': {
+        'nn_optimizer': nn_optimizer.zoopt.VarReducedZOOptimizer,
+        'optimizee': optimizee.mnist.EMnistAttack,
+        'batch_size': 1,
+        'test_batch_size': 1,
+        'lr': 0.005,
+        "max_epoch": 40,
+        'optimizer_steps': 200,
+        'test_optimizer_steps': 200,
+        'attack_model': optimizee.mnist.EMnistConvModel,
+        'attack_model_ckpt': "./ckpt/attack_model/emnist_cnn.pt",
+        'tests': {
+            'optimizee': optimizee.mnist.EMnistAttack,
+            'test_indexes': list(range(1, 3)),  # test image indexes
+            'test_num': 10,  # number of independent attacks
+            'n_steps': 200,
+            'test_batch_size': 1,
+            'nn_opt': nn_optimizer.zoopt.VarReducedZOOptimizer,
+            'base_opt': nn_optimizer.basezoopt.BaseZOOptimizer,
+            'base_lr': 4,
+            'sign_opt': nn_optimizer.basezoopt.SignZOOptimizer,
+            'sign_lr': 8,
+            'adam_opt': nn_optimizer.basezoopt.AdamZOOptimizer,
+            'adam_lr': 8,
+            'adam_beta_1': 0.9,
+            'adam_beta_2': 0.996,
+            # 'nn_opt_no_query': nn_optimizer.zoopt.VarReducedZOOptimizer,
+            # 'nn_opt_no_update': nn_optimizer.zoopt.VarReducedZOOptimizer,
+            # 'nn_opt_guided': nn_optimizer.zoopt.VarReducedZOOptimizer,
+        }
+    },
 }
