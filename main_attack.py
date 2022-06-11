@@ -318,9 +318,9 @@ def train_optimizer_attack(args):
                     prev_loss = loss.data
 
                     if hasattr(meta_optimizer, "reg_loss"):
-                        loss_sum += meta_optimizer.reg_loss
+                        loss_sum += meta_optimizer.reg_loss.cuda("cuda:0")
                     if hasattr(meta_optimizer, "grad_reg_loss"):
-                        loss_sum += meta_optimizer.grad_reg_loss
+                        loss_sum += meta_optimizer.grad_reg_loss.cuda("cuda:0")
 
                 # Update the parameters of the meta nn_optimizer
                 
@@ -354,7 +354,7 @@ def train_optimizer_attack(args):
         num = 0
         for test_idx, (test_data, test_target) in enumerate(tqdm(test_loader, desc='Testing optimizer', leave=False)):
             if test_idx >= args.max_test_during_training:
-                num = 1
+                if n==0: num = 1
                 break
 
             test_data = set_precision(test_data, args.precision)

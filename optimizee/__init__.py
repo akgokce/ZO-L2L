@@ -315,10 +315,14 @@ class CustomLoss(Function):
            
             #print(r)
             grads.append(r.cuda("cuda:0"))
-        grads = torch.tensor(grads)
-        
+        grads = torch.tensor(grads,device = "cuda:0")
+        grad_output = grad_output.cuda("cuda:0")
         grad_weight = grads.view(*weight_shape)
         
+        #print(grad_weight.device)
+        #print(grad_output.device)
+        #print("**")
+        #time.sleep(2)
         return grad_weight * grad_output, None, None, None
     
 

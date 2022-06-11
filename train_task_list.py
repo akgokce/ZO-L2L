@@ -14,9 +14,9 @@ tasks = {
         'batch_size': 1,
         'test_batch_size': 1,
         'lr': 1e-3,
-        "max_epoch": 20,
-        'optimizer_steps': 200,
-        'test_optimizer_steps': 200,
+        "max_epoch": 10,
+        'optimizer_steps': 100,
+        'test_optimizer_steps': 100,
         'attack_model': optimizee.mnist.MnistConvModel,
         'attack_model_ckpt': "./ckpt/attack_model/mnist_cnn.pt",
         'tests': {
