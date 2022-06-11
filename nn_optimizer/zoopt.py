@@ -64,13 +64,111 @@ class ZOOptimizer(nn_optimizer.NNOptimizer):
             flat_grads += self.GradientEstimate(model, data, target, u) * u
         flat_grads /= self.q
 
-        #print(flat_grads.shape)
-
         flat_params = self.meta_model.get_flat_params()
         inputs = Variable(flat_grads.view(-1, 1).unsqueeze(1))
 
         # Meta update itself
         delta = self(inputs)
+        flat_params = flat_params + delta
+
+        self.meta_model.set_flat_params(flat_params)
+
+        # Finally, copy values from the meta model to the normal one.
+        self.meta_model.copy_params_to(model)
+        return self.meta_model.model, loss, f_x
+
+
+# ZOprop optimizer (UpdateRNN only)
+class ZOPropOptimizer(nn_optimizer.NNOptimizer):
+
+    def __init__(self, model, args, num_layers=1, input_dim=1, hidden_size=10, beta1=0.95, beta2=0.95, eps=1e-8):
+        super(ZOPropOptimizer, self).__init__(model, args)
+
+        self.update_rnn = nn.LSTM(input_dim, hidden_size, num_layers, batch_first=True, bias=False)
+        self.outputer = nn.Linear(hidden_size, 1, bias=False)
+        self.outputer.weight.data.mul_(0.1)
+
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+        self.input_dim = input_dim
+
+        self.q = args.grad_est_q
+
+        self.beta1 = beta1
+        self.beta2 = beta2
+        self.m = 0
+        self.v = 0
+        self.beta1_t = 1
+        self.beta2_t = 1
+        self.eps = eps
+
+
+    def reset_state(self, keep_states=False, model=None, use_cuda=False, gpu_num=0):
+        self.meta_model.reset()
+        self.meta_model.copy_params_from(model)
+        if keep_states:
+            self.h0 = Variable(self.h0.data)
+            self.c0 = Variable(self.c0.data)
+            
+            self.m = Variable(self.m.data)
+            self.v = Variable(self.v.data)
+        else:
+            def initialize_rnn_hidden_state(dim_sum, n_layers, n_params):
+                h0 = Variable(torch.zeros(n_layers, n_params, dim_sum), requires_grad=True)
+                if use_cuda:
+                    h0.data = h0.data.cuda(gpu_num)
+                return h0
+
+            self.h0 = initialize_rnn_hidden_state(self.hidden_size, self.num_layers,
+                                                  self.meta_model.get_flat_params().size(0))
+            self.c0 = initialize_rnn_hidden_state(self.hidden_size, self.num_layers,
+                                                  self.meta_model.get_flat_params().size(0))
+            self.step = 0
+
+            self.m = 0
+            self.v = 0
+            self.beta1_t = 1
+            self.beta2_t = 1
+
+    def forward(self, x):
+        output1, (hn1, cn1) = self.update_rnn(x, (self.h0, self.c0))
+        self.h0 = hn1
+        self.c0 = cn1
+        o1 = self.outputer(output1)
+        return o1.squeeze()
+
+    def meta_update(self, model, data, target):
+        # compute the zeroth-order gradient estimate of the model
+        f_x = model(data)
+        loss = model.loss(f_x, target)
+
+        self.step += 1
+
+        flat_grads = torch.zeros_like(model.get_params())
+        for _ in range(self.q):
+            u = torch.randn_like(model.get_params())  # sampled query direction
+            flat_grads += self.GradientEstimate(model, data, target, u) * u
+        flat_grads /= self.q
+
+        flat_params = self.meta_model.get_flat_params()
+        inputs = Variable(flat_grads.view(-1, 1).unsqueeze(1))
+
+        # Meta update itself
+        g = self(inputs)
+
+        # Adam step
+        self.m = self.beta1*self.m + (1-self.beta1)*g
+        self.v = self.beta2*self.v + (1-self.beta1)*g.pow(2)
+
+        self.beta1_t *= self.beta1
+        self.beta2_t *= self.beta2
+
+        m_hat = self.m/(1-self.beta1_t)
+        v_hat = self.v/(1-self.beta2_t)
+
+        delta = m_hat/(v_hat.sqrt() + self.eps)
+
+
         flat_params = flat_params + delta
 
         self.meta_model.set_flat_params(flat_params)
