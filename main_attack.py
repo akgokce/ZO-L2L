@@ -156,7 +156,7 @@ def train_optimizer_attack(args):
         num = 0
         for test_idx, (test_data, test_target) in enumerate(tqdm(test_loader, desc='Testing optimizer', leave=False)):
             if test_idx >= args.max_test_during_training:
-                num = 1
+                if num==0: num=1
                 break
 
             test_data = set_precision(test_data, args.precision)
