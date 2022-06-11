@@ -75,7 +75,7 @@ class MnistConvModel(MnistModel):
 
 
 class MnistAttack(optimizee.Optimizee):
-    def __init__(self, attack_model, convex_model=None, batch_size=1, channel=1, width=28, height=28, c=0.1, gap=0.0,
+    def __init__(self, attack_model, batch_size=1, convex_model=None, channel=1, width=28, height=28, c=0.1, gap=0.0,
                  loss_type="l1", initial_noise=True, r=None):
         super(MnistAttack, self).__init__()
 

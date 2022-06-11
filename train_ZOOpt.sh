@@ -3,7 +3,7 @@ source /om2/user/akgokce/anaconda/etc/profile.d/conda.sh
 conda activate zol2l
 
 python main_attack.py \
-    --exp_name ZO_attack_mnist_fp32_test_20 \
+    --exp_name test \
     --train_task ZOL2LProp-Attack \
     --gpu_num 0 \
     --train optimizer_attack \
