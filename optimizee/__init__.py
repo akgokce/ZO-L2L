@@ -161,3 +161,4 @@ custom_loss = CustomLoss.apply
 
 
 from . import mnist
+from . import cifar

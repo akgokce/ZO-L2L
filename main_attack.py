@@ -221,7 +221,8 @@ def optimizer_train_optimizee_attack(args):
     attack_model.reset()  # not include parameters
 
     for test_idx in task['tests']['test_indexes']:
-        _, test_loader = task["tests"]["optimizee"].dataset_loader(args.data_dir, task['batch_size'],
+        meta_model = task["tests"]["optimizee"](optimizee.AttackModel(attack_model), task['tests']['test_batch_size'], mean=task["tests"]["mean"], std=task["tests"]["std"], num_classes=task["tests"]["num_classes"])
+        _, test_loader = meta_model.dataset_loader(args.data_dir, task['batch_size'],
                                                                    task['tests']['test_batch_size'])
         test_loader = iter(test_loader)
 
@@ -233,7 +234,6 @@ def optimizer_train_optimizee_attack(args):
         if args.cuda:
             data, target = data.cuda(args.gpu_num), target.cuda(args.gpu_num)
 
-        meta_model = task["tests"]["optimizee"](optimizee.AttackModel(attack_model), task['tests']['test_batch_size'])
         meta_model = set_precision(meta_model, args.precision)
         if args.cuda:
             meta_model.cuda(args.gpu_num)
@@ -315,7 +315,7 @@ def optimizer_train_optimizee_attack(args):
             nn_opt_guided_loss_array = []
 
         for num in range(1, task["tests"]["test_num"] + 1):
-            model = task["tests"]["optimizee"](optimizee.AttackModel(attack_model), task['tests']['test_batch_size'])
+            model = task["tests"]["optimizee"](optimizee.AttackModel(attack_model), task['tests']['test_batch_size'], mean=task["tests"]["mean"], std=task["tests"]["std"], num_classes=task["tests"]["num_classes"])
             model = set_precision(model, args.precision)
             if args.cuda:
                 model.cuda(args.gpu_num)
