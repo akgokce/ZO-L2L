@@ -4,7 +4,7 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 import numpy as np
 import os
-
+import time
 import nn_optimizer
 import optimizee
 
@@ -25,7 +25,7 @@ class ZOOptimizer(nn_optimizer.NNOptimizer):
 
         self.q = args.grad_est_q
 
-    def reset_state(self, keep_states=False, model=None, use_cuda=False, gpu_num=0):
+    def reset_state(self, keep_states=False, model=None, use_cuda=True, gpu_num=0):
         self.meta_model.reset()
         self.meta_model.copy_params_from(model)
         if keep_states:
@@ -54,25 +54,26 @@ class ZOOptimizer(nn_optimizer.NNOptimizer):
     def meta_update(self, model, data, target):
         # compute the zeroth-order gradient estimate of the model
         f_x = model(data)
-        loss = model.loss(f_x, target)
+        loss = model.loss(f_x, target) ##safe
 
         self.step += 1
-
+        
         flat_grads = torch.zeros_like(model.get_params())
         for _ in range(self.q):
             u = torch.randn_like(model.get_params())  # sampled query direction
             flat_grads += self.GradientEstimate(model, data, target, u) * u
         flat_grads /= self.q
-
+                    
         flat_params = self.meta_model.get_flat_params()
         inputs = Variable(flat_grads.view(-1, 1).unsqueeze(1))
-
+      
         # Meta update itself
-        delta = self(inputs)
+        delta = self(inputs) ## ill part
         flat_params = flat_params + delta
+      
+        self.meta_model.set_flat_params(flat_params) ##safe
 
-        self.meta_model.set_flat_params(flat_params)
-
+                    
         # Finally, copy values from the meta model to the normal one.
         self.meta_model.copy_params_to(model)
         return self.meta_model.model, loss, f_x

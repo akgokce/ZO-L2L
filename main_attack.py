@@ -102,11 +102,14 @@ def train_optimizer_nn_scratch(args):
                 if args.cuda:
                     prev_loss = prev_loss.cuda(args.gpu_num)
                     
+                    
+                  
                 for j in tqdm(range(args.truncated_bptt_step), desc='TBPTT steps', leave=False):
                     # Perfom a meta update using gradients from model
                     # and return the current meta model saved in the nn_optimizer
+                    
                     meta_model, *_ = meta_optimizer.meta_update(model, data, target) ##use optimizer (updaternn) to updte the metamodel (nn scratch)
-
+                    
                     # Compute a loss for a step the meta nn_optimizer
                     if not args.use_finite_diff:
                         # Use first-order method to train the zeroth-order optimizer
@@ -119,6 +122,7 @@ def train_optimizer_nn_scratch(args):
                         
                         #loss = optimizee.custom_loss(meta_model.weight, data, target, meta_model.nondiff_loss)
 
+        
                         meta_model_parameters = meta_model.get_flat_params()
                         
                         loss = optimizee.custom_loss(meta_model_parameters, data, target, meta_model.nondiff_loss)
@@ -128,6 +132,7 @@ def train_optimizer_nn_scratch(args):
                     loss_sum += (k * args.truncated_bptt_step + j) * (loss - Variable(prev_loss))
                     prev_loss = loss.data
 
+                    
                     if hasattr(meta_optimizer, "reg_loss"):
                         loss_sum += meta_optimizer.reg_loss
                     if hasattr(meta_optimizer, "grad_reg_loss"):
@@ -801,5 +806,5 @@ if __name__ == "__main__":
     set_default_precision(args.precision)
     main(args)
 
-##python main_attack.py --exp_name NN-SCRATCH --train_task nn-scratch --gpu_num 1 --train train_optimizer_nn_scratch --use_finite_diff
+##python main_attack.py --exp_name NN-SCRATCH --train_task nn-scratch --gpu_num 0 --train train_optimizer_nn_scratch --use_finite_diff
 ##python main_attack.py --exp_name ZO_attack_mnist --train_task ZOL2L-Attack --gpu_num 0 --train optimizer_attack --use_finite_diff
