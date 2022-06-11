@@ -61,6 +61,17 @@ class Optimizee(nn.Module):
     def get_params_size(self):
         return self.get_params().size(0)
 
+    def random_scale(self):
+        """
+        Apply random scaling to the parameters of the optimizee.
+        """
+        if hasattr(self.r):
+            params = self.get_params()
+            c = 2 * self.r * torch.rand(params.shape) - self.r # Uniform sampling between (-self.r, self.r)
+            c = torch.exp(c)
+            self.set_params(c * params)
+        
+
 
 class MetaModel:
     def __init__(self, model):
@@ -161,3 +172,4 @@ custom_loss = CustomLoss.apply
 
 
 from . import mnist
+from . import trivial

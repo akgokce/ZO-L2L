@@ -33,14 +33,14 @@ def train_optimizer_attack(args):
     task = train_task_list.tasks[args.train_task]
 
     # Logging
-    wandb.init(
-        tags=None,
-        project='ZOL2L', 
-        entity='akgokce', 
-        name=args.exp_name, 
-        #id=f'{args.name}_{args.id}',
-        config=args
-        )
+    # wandb.init(
+    #     tags=None,
+    #     project='ZOL2L', 
+    #     entity='akgokce', 
+    #     name=args.exp_name, 
+    #     #id=f'{args.name}_{args.id}',
+    #     config=args
+    #     )
 
     print("Training ZO optimizer...\nOptimizer: {}. Optimizee: {}".format(task["nn_optimizer"].__name__, task["optimizee"].__name__))
 
@@ -53,7 +53,10 @@ def train_optimizer_attack(args):
     attack_model.eval()
     attack_model.reset()  # not include parameters
 
-    meta_model = task["optimizee"](optimizee.AttackModel(attack_model), task['batch_size'])  # meta optimizer
+    convex_model = optimizee.trivial.SimpleConvexModel(int(args.convex_model_dim)) if args.convex_model_dim!='0' else None
+    convex_model = set_precision(convex_model, args.precision, gpu_num=args.gpu_num)
+
+    meta_model = task["optimizee"](optimizee.AttackModel(attack_model), convex_model=convex_model, batch_size=task['batch_size'])  # meta optimizer
     meta_model = set_precision(meta_model, args.precision)
     if args.cuda:
         meta_model.cuda(args.gpu_num)
@@ -78,7 +81,7 @@ def train_optimizer_attack(args):
         meta_optimizer.train()
         for i in tqdm(range(args.updates_per_epoch), desc='Training optimizer', leave=False):
             # The `optimizee` for attack task
-            model = task["optimizee"](optimizee.AttackModel(attack_model), task['batch_size'])
+            model = task["optimizee"](optimizee.AttackModel(attack_model), convex_model=convex_model, batch_size=task['batch_size'])
             model = set_precision(model, args.precision)
             if args.cuda:
                 model.cuda(args.gpu_num)
@@ -156,7 +159,7 @@ def train_optimizer_attack(args):
         num = 0
         for test_idx, (test_data, test_target) in enumerate(tqdm(test_loader, desc='Testing optimizer', leave=False)):
             if test_idx >= args.max_test_during_training:
-                num = 1
+                if num==0: num=1
                 break
 
             test_data = set_precision(test_data, args.precision)
@@ -593,6 +596,8 @@ if __name__ == "__main__":
                         default='double', help='precision')
     parser.add_argument('--max_test_during_training', type=int, default=100,
                         help='Maximum number of test attactks during training')
+    parser.add_argument('--convex_model_dim', type=str, default="0",
+                        help='dimension of the convex model, use "0" to disable it')
 
     args = parser.parse_args()
     args.cuda = not args.no_cuda and torch.cuda.is_available()
