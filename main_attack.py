@@ -35,8 +35,8 @@ def train_optimizer_attack(args):
     # Logging
     wandb.init(
         tags=None,
-        project='ZOL2L', 
-        entity='akgokce', 
+        project='optml-project', 
+        entity='mismayil', 
         name=args.exp_name, 
         #id=f'{args.name}_{args.id}',
         config=args
