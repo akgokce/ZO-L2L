@@ -9,4 +9,5 @@ python main_attack.py \
     --train optimizer_attack \
     --precision full \
     --max_test_during_training 20 \
-    --convex_model_dim 100
+    --convex_model_dim 100\
+    --random_scaling 3

@@ -64,6 +64,8 @@ class ZOOptimizer(nn_optimizer.NNOptimizer):
             flat_grads += self.GradientEstimate(model, data, target, u) * u
         flat_grads /= self.q
 
+        #print(flat_grads.shape)
+
         flat_params = self.meta_model.get_flat_params()
         inputs = Variable(flat_grads.view(-1, 1).unsqueeze(1))
 

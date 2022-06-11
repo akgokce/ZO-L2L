@@ -61,13 +61,14 @@ class Optimizee(nn.Module):
     def get_params_size(self):
         return self.get_params().size(0)
 
-    def random_scale(self):
+    def random_scaling(self):
         """
         Apply random scaling to the parameters of the optimizee.
         """
-        if hasattr(self.r):
+        if hasattr(self, 'r'):
+            if self.r is None or 0: return
             params = self.get_params()
-            c = 2 * self.r * torch.rand(params.shape) - self.r # Uniform sampling between (-self.r, self.r)
+            c = 2 * self.r * torch.rand(params.shape, device=params.device, dtype=params.dtype) - self.r # Uniform sampling between (-self.r, self.r)
             c = torch.exp(c)
             self.set_params(c * params)
         
