@@ -33,14 +33,14 @@ def train_optimizer_attack(args):
     task = train_task_list.tasks[args.train_task]
 
     # Logging
-    # wandb.init(
-    #     tags=None,
-    #     project='ZOL2L', 
-    #     entity='akgokce', 
-    #     name=args.exp_name, 
-    #     #id=f'{args.name}_{args.id}',
-    #     config=args
-    #     )
+    wandb.init(
+        tags=None,
+        project='ZOL2L', 
+        entity='akgokce', 
+        name=args.exp_name, 
+        #id=f'{args.name}_{args.id}',
+        config=args
+        )
 
     print("Training ZO optimizer...\nOptimizer: {}. Optimizee: {}".format(task["nn_optimizer"].__name__, task["optimizee"].__name__))
 
@@ -114,7 +114,7 @@ def train_optimizer_attack(args):
                 meta_optimizer.reset_state(
                     keep_states=k > 0, model=model, use_cuda=args.cuda, gpu_num=args.gpu_num)
 
-                model.convex_model.reset()
+                if model.convex_model is not None: model.convex_model.reset()
 
                 loss_sum = 0
                 prev_loss = torch.zeros(1)

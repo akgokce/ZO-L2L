@@ -189,6 +189,7 @@ class ZOOptimizerProp(nn_optimizer.NNOptimizer):
 
         self.update_rnn = nn.LSTM(input_dim, hidden_size, num_layers, batch_first=True, bias=False)
         self.inputer = nn.Linear(2, 1, bias=False)
+        self.inputer.weight.data.mul_(0.1)
         self.elu = nn.ELU()
         self.outputer = nn.Linear(hidden_size, 1, bias=False)
         self.outputer.weight.data.mul_(0.1)
@@ -236,7 +237,8 @@ class ZOOptimizerProp(nn_optimizer.NNOptimizer):
             self.beta1_t = 1
             self.beta2_t = 1
 
-    def forward(self, x):
+    def forward(self, g_m):
+        x = self.elu(self.inputer(g_m)).view(-1, 1).unsqueeze(1)
         output1, (hn1, cn1) = self.update_rnn(x, (self.h0, self.c0))
         self.h0 = hn1
         self.c0 = cn1
@@ -271,10 +273,8 @@ class ZOOptimizerProp(nn_optimizer.NNOptimizer):
         v_hat_sqrt = torch.sqrt(self.v/(1-self.beta2_t)) + self.eps
 
         inputs = torch.stack([g/v_hat_sqrt, m_hat/v_hat_sqrt], dim=1)
-        inputs = self.elu(self.inputer(inputs))
 
         # Meta update itself
-        inputs = Variable(inputs.view(-1, 1).unsqueeze(1))
         delta = self(inputs)
 
         flat_params = flat_params + delta
