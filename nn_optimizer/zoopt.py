@@ -80,10 +80,10 @@ class ZOOptimizer(nn_optimizer.NNOptimizer):
 
 
 # ZOprop optimizer (UpdateRNN only)
-class ZOOptimizerProp(nn_optimizer.NNOptimizer):
+class ZOOptimizerAdam(nn_optimizer.NNOptimizer):
 
     def __init__(self, model, args, num_layers=1, input_dim=1, hidden_size=10, beta1=0.95, beta2=0.95, eps=1e-8):
-        super(ZOOptimizerProp, self).__init__(model, args)
+        super(ZOOptimizerAdam, self).__init__(model, args)
 
         self.update_rnn = nn.LSTM(input_dim, hidden_size, num_layers, batch_first=True, bias=False)
         self.outputer = nn.Linear(hidden_size, 1, bias=False)
@@ -182,13 +182,14 @@ class ZOOptimizerProp(nn_optimizer.NNOptimizer):
 
 
 # ZOprop optimizer (UpdateRNN only)
-class ZOOptimizerAdam(nn_optimizer.NNOptimizer):
+class ZOOptimizerProp(nn_optimizer.NNOptimizer):
 
     def __init__(self, model, args, num_layers=1, input_dim=1, hidden_size=10, beta1=0.95, beta2=0.95, eps=1e-8):
-        super(ZOOptimizerAdam, self).__init__(model, args)
+        super(ZOOptimizerProp, self).__init__(model, args)
 
         self.update_rnn = nn.LSTM(input_dim, hidden_size, num_layers, batch_first=True, bias=False)
         self.inputer = nn.Linear(2, 1, bias=False)
+        self.elu = nn.ELU()
         self.outputer = nn.Linear(hidden_size, 1, bias=False)
         self.outputer.weight.data.mul_(0.1)
 
@@ -270,7 +271,7 @@ class ZOOptimizerAdam(nn_optimizer.NNOptimizer):
         v_hat_sqrt = torch.sqrt(self.v/(1-self.beta2_t)) + self.eps
 
         inputs = torch.stack([g/v_hat_sqrt, m_hat/v_hat_sqrt], dim=1)
-        inputs = self.inputer(inputs)
+        inputs = self.elu(self.inputer(inputs))
 
         # Meta update itself
         inputs = Variable(inputs.view(-1, 1).unsqueeze(1))
