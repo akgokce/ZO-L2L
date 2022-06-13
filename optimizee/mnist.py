@@ -97,6 +97,10 @@ class FMnistConvModel(MnistConvModel):
     pass
 
 
+class KMnistConvModel(MnistConvModel):
+    pass
+
+
 class MnistAttack(optimizee.Optimizee):
     def __init__(self, attack_model, batch_size=1, channel=1, width=28, height=28, c=0.1, gap=0.0,
                  loss_type="l1", initial_noise=True, mean=0.1307, std=0.3081, num_classes=10):
@@ -295,6 +299,33 @@ class FMnistAttack(MnistAttack):
         train_loader = None
         test_loader = torch.utils.data.DataLoader(
             Subset(datasets.FashionMNIST(data_dir, train=False, transform=transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Normalize((self.mean,), (self.std,))
+            ])), test_indices),
+            batch_size=test_batch_size, shuffle=False) 
+
+        return train_loader, test_loader
+
+
+class KMnistAttack(MnistAttack):
+    def dataset_loader(self, data_dir, batch_size, test_batch_size, train_num=100, test_num=100):
+        path = os.path.join(data_dir, "kmnist_correct/label_correct_index.npy")
+        label_correct_indices = list(np.load(path))
+        random.seed(1234)
+        random.shuffle(label_correct_indices)
+        train_indices = label_correct_indices[:train_num]
+        test_indices = label_correct_indices[5000:5000 + test_num]
+
+        train_loader = torch.utils.data.DataLoader(
+            datasets.KMNIST(data_dir, train=False, download=True,
+                        transform=transforms.Compose([
+                            transforms.ToTensor(),
+                            transforms.Normalize((self.mean,), (self.std,))
+                        ])),
+            batch_size=batch_size, shuffle=False, sampler=SubsetRandomSampler(train_indices), drop_last=True)
+        train_loader = None
+        test_loader = torch.utils.data.DataLoader(
+            Subset(datasets.KMNIST(data_dir, train=False, transform=transforms.Compose([
                 transforms.ToTensor(),
                 transforms.Normalize((self.mean,), (self.std,))
             ])), test_indices),
