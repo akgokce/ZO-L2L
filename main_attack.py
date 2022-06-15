@@ -240,7 +240,7 @@ def optimizer_train_optimizee_attack(args):
     for test_idx in task['tests']['test_indexes']:
         meta_model = task["tests"]["optimizee"](optimizee.AttackModel(attack_model), task['tests']['test_batch_size'], mean=task["tests"]["mean"], std=task["tests"]["std"], num_classes=task["tests"]["num_classes"])
         _, test_loader = meta_model.dataset_loader(args.data_dir, task['batch_size'],
-                                                                   task['tests']['test_batch_size'])
+                                                                   task['tests']['test_batch_size'], index_path=task["tests"]["index_path"])
         test_loader = iter(test_loader)
 
         for _ in range(test_idx):  # attacked image
