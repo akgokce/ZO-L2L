@@ -230,17 +230,17 @@ def optimizer_train_optimizee_nn_scratch(args):
     assert "scratch" in args.train_task
     task = train_task_list.tasks[args.train_task]
 
-    attack_model = task["attack_model"]()
-    if args.cuda:
-        attack_model.cuda(args.gpu_num)
-    ckpt_dict = torch.load(task["attack_model_ckpt"], map_location='cpu')
-    attack_model.load_state_dict(ckpt_dict)
-    attack_model = set_precision(attack_model, args.precision)
-    attack_model.eval()
-    attack_model.reset()  # not include parameters
+    #attack_model = task["attack_model"]()
+    #if args.cuda:
+    #    attack_model.cuda(args.gpu_num)
+    #ckpt_dict = torch.load(task["attack_model_ckpt"], map_location='cpu')
+    #attack_model.load_state_dict(ckpt_dict)
+    #attack_model = set_precision(attack_model, args.precision)
+    #attack_model.eval()
+    #attack_model.reset()  # not include parameters
 
     for test_idx in task['tests']['test_indexes']:
-        _, test_loader = task["tests"]["optimizee"].dataset_loader(args.data_dir, task['batch_size'],
+        _, test_loader = task["tests"]["nn_to_be_trained"].dataset_loader(args.data_dir, task['batch_size'],
                                                                    task['tests']['test_batch_size'])
         test_loader = iter(test_loader)
 
@@ -252,8 +252,10 @@ def optimizer_train_optimizee_nn_scratch(args):
         if args.cuda:
             data, target = data.cuda(args.gpu_num), target.cuda(args.gpu_num)
 
-        meta_model = task["tests"]["optimizee"](optimizee.AttackModel(attack_model), task['tests']['test_batch_size'])
+        #meta_model = task["tests"]["optimizee"](optimizee.AttackModel(attack_model), task['tests']['test_batch_size'])
+        meta_model = task["nn_to_be_trained"](task['tests']['test_batch_size'])
         meta_model = set_precision(meta_model, args.precision)
+        
         if args.cuda:
             meta_model.cuda(args.gpu_num)
 
@@ -290,7 +292,8 @@ def optimizer_train_optimizee_nn_scratch(args):
 
         # ZO-LSTM-no-query (without QueryRNN)
         if "nn_opt_no_query" in task["tests"]:
-            meta_model_2 = task["tests"]["optimizee"](optimizee.AttackModel(attack_model), task['tests']['test_batch_size'])
+            #meta_model_2 = task["tests"]["optimizee"](optimizee.AttackModel(attack_model), task['tests']['test_batch_size'])
+            meta_model_2 = task["nn_to_be_trained"](task['tests']['test_batch_size'])
             meta_model_2 = set_precision(meta_model_2, args.precision)
             if args.cuda:
                 meta_model_2.cuda(args.gpu_num)
@@ -334,7 +337,8 @@ def optimizer_train_optimizee_nn_scratch(args):
             nn_opt_guided_loss_array = []
 
         for num in range(1, task["tests"]["test_num"] + 1):
-            model = task["tests"]["optimizee"](optimizee.AttackModel(attack_model), task['tests']['test_batch_size'])
+            #model = task["tests"]["optimizee"](optimizee.AttackModel(attack_model), task['tests']['test_batch_size'])
+            model = task["nn_to_be_trained"](task['tests']['test_batch_size'])
             model = set_precision(model, args.precision)
             if args.cuda:
                 model.cuda(args.gpu_num)
@@ -871,8 +875,8 @@ def optimizer_train_optimizee_attack(args):
             nn_optimizer_guided.eval()
             nn_opt_guided_loss_array = []
 
-        for num in range(1, task["tests"]["test_num"] + 1):
-            model = task["tests"]["optimizee"](optimizee.AttackModel(attack_model), task['tests']['test_batch_size'])
+        for num in range(1, task["tests"]["test_num"] + 1): #test_num tests
+            model = task["tests"]["optimizee"](optimizee.AttackModel(attack_model), task['tests']['test_batch_size']) #load optimizee model
             model = set_precision(model, args.precision)
             if args.cuda:
                 model.cuda(args.gpu_num)
@@ -1121,8 +1125,10 @@ def main(args):
         train_optimizer_attack(args)
     elif args.train == "optimizer_train_optimizee_attack":  # use the learned optimizer to train optimizee
         optimizer_train_optimizee_attack(args)
-    elif args.train == "train_optimizer_nn_scratch":  # use the learned optimizer to train optimizee
+    elif args.train == "train_optimizer_nn_scratch":  # train optimizer for 0-1 loss
         train_optimizer_nn_scratch(args)
+    elif args.train == "optimizer_train_optimizee_nn_scratch":  # use the learned optimizer to train optimizee
+        optimizer_train_optimizee_nn_scratch(args)
 
 
 if __name__ == "__main__":
@@ -1133,7 +1139,7 @@ if __name__ == "__main__":
     parser.add_argument('--ckpt_path', type=str, help='checkpoint path')
     parser.add_argument('--warm_start_ckpt', type=str, default="None", help='checkpoint path for warm start')
     parser.add_argument('--train', type=str, default="optimizer_attack",
-                        choices=["train_optimizer_nn_scratch","optimizer_attack", "optimizer_train_optimizee_attack"],
+                        choices=["train_optimizer_nn_scratch","optimizer_attack", "optimizer_train_optimizee_attack","optimizer_train_optimizee_nn_scratch"],
                         help='train optimizer or use the learned optimizer to train optimizee')
     parser.add_argument('--train_task', type=str, default="ZOL2L-Attack",
                         choices=train_task_list.tasks.keys(), help='MNIST only support `attack` yet')
@@ -1168,4 +1174,11 @@ if __name__ == "__main__":
 ##python main_attack.py --exp_name NN-SCRATCH --train_task nn-scratch --gpu_num 1 --train train_optimizer_nn_scratch --use_finite_diff
 ##python main_attack.py --exp_name ZO_attack_mnist --train_task ZOL2L-Attack --gpu_num 0 --train optimizer_attack --use_finite_diff
 
+###optimizer_train_optimizee_nn_scratch
+
 #python main_attack.py --exp_name VarReduced_NN-SCRATCH --train_task VarReducedZOL2L-nn-scratch --gpu_num 1 --train train_optimizer_nn_scratch --warm_start_ckpt ./output/NN-SCRATCH/ckpt_best
+
+#python main_attack.py --exp_name VarReduced_NN-SCRATCH --train_task VarReducedZOL2L-nn-scratch --gpu_num 1 --train optimizer_train_optimizee_nn_scratch --ckpt_path ckpt_best --save_loss --save_fig
+
+#python main_attack.py --exp_name NN-SCRATCH --train_task nn-scratch --gpu_num 1 --train optimizer_train_optimizee_nn_scratch --ckpt_path ckpt_best --save_loss --save_fig
+

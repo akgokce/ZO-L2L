@@ -21,6 +21,7 @@ tasks = {
         'attack_model_ckpt': "./ckpt/attack_model/mnist_cnn.pt",
         'tests': {
             'optimizee': optimizee.mnist.MnistAttack,
+            'nn_to_be_trained': optimizee.mnist.MnistCustomModel,
             'test_indexes': list(range(1, 11)),  # test image indexes
             'test_num': 10,  # number of independent attacks
             'n_steps': 200,
@@ -28,6 +29,12 @@ tasks = {
             'nn_opt': nn_optimizer.zoopt.ZOOptimizer,
             'base_opt': nn_optimizer.basezoopt.BaseZOOptimizer,
             'base_lr': 4,
+            'sign_opt': nn_optimizer.basezoopt.SignZOOptimizer,
+            'sign_lr': 8,
+            'adam_opt': nn_optimizer.basezoopt.AdamZOOptimizer,
+            'adam_lr': 8,
+            'adam_beta_1': 0.9,
+            'adam_beta_2': 0.996
         }
     },
         # train ZO optimizer (both UpdateRNN and QueryRNN) for MNIST attack
@@ -45,7 +52,8 @@ tasks = {
         'attack_model_ckpt': "./ckpt/attack_model/mnist_cnn.pt",
         'tests': {
             'optimizee': optimizee.mnist.MnistAttack,
-            'test_indexes': list(range(1, 11)),  # test image indexes
+            'nn_to_be_trained': optimizee.mnist.MnistCustomModel,
+            'test_indexes': list(range(1, 11)),  # test image indexes, 10 tests
             'test_num': 10,  # number of independent attacks
             'n_steps': 200,
             'test_batch_size': 1,
