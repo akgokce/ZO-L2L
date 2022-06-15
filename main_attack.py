@@ -17,7 +17,7 @@ import train_task_list
 import optimizee
 import nn_optimizer
 
-from utils import set_precision, set_default_precision
+from utils import set_precision, set_default_precision, get_precision_dtype
 import wandb
 from tqdm import tqdm
 
@@ -53,7 +53,16 @@ def train_optimizer_attack(args):
     attack_model.eval()
     attack_model.reset()  # not include parameters
 
-    meta_model = task["optimizee"](optimizee.AttackModel(attack_model), task['batch_size'])  # meta optimizer
+    
+    if args.convex_model_dim!='0':
+        convex_model_dim = int(args.convex_model_dim)
+        dtype = get_precision_dtype(args.precision)
+        convex_model = optimizee.trivial.SimpleConvexModel(dim=convex_model_dim, r=1, cuda=args.cuda, gpu_num=args.gpu_num, dtype=dtype)
+    else:
+        convex_model = None
+
+    random_scaling = float(args.random_scaling) if args.random_scaling!="0" else None
+    meta_model = task["optimizee"](optimizee.AttackModel(attack_model), convex_model=convex_model, batch_size=task['batch_size'], r=random_scaling)  # meta optimizer
     meta_model = set_precision(meta_model, args.precision)
     if args.cuda:
         meta_model.cuda(args.gpu_num)
@@ -78,10 +87,16 @@ def train_optimizer_attack(args):
         meta_optimizer.train()
         for i in tqdm(range(args.updates_per_epoch), desc='Training optimizer', leave=False):
             # The `optimizee` for attack task
-            model = task["optimizee"](optimizee.AttackModel(attack_model), task['batch_size'])
+            model = task["optimizee"](optimizee.AttackModel(attack_model), convex_model=convex_model, batch_size=task['batch_size'], r=random_scaling)
             model = set_precision(model, args.precision)
             if args.cuda:
                 model.cuda(args.gpu_num)
+            model.random_scaling()
+
+            if convex_model is not None: 
+                convex_model.re_initialize()
+                convex_model.random_scaling()
+                model.convex_model = convex_model
 
             # In the attack task, each attacked image corresponds to a particular optmizee model
             data, target = next(train_loader)
@@ -98,6 +113,8 @@ def train_optimizer_attack(args):
                 # Keep states for truncated BPTT
                 meta_optimizer.reset_state(
                     keep_states=k > 0, model=model, use_cuda=args.cuda, gpu_num=args.gpu_num)
+
+                if model.convex_model is not None: model.convex_model.reset()
 
                 loss_sum = 0
                 prev_loss = torch.zeros(1)
@@ -156,7 +173,7 @@ def train_optimizer_attack(args):
         num = 0
         for test_idx, (test_data, test_target) in enumerate(tqdm(test_loader, desc='Testing optimizer', leave=False)):
             if test_idx >= args.max_test_during_training:
-                num = 1
+                if num==0: num=1
                 break
 
             test_data = set_precision(test_data, args.precision)
@@ -593,6 +610,10 @@ if __name__ == "__main__":
                         default='double', help='precision')
     parser.add_argument('--max_test_during_training', type=int, default=100,
                         help='Maximum number of test attactks during training')
+    parser.add_argument('--random_scaling', type=str, default="0",
+                        help='whether apply randon scaling on parameters, use "0" to disable it')
+    parser.add_argument('--convex_model_dim', type=str, default="0",
+                        help='dimension of the convex model, use "0" to disable it')
 
     args = parser.parse_args()
     args.cuda = not args.no_cuda and torch.cuda.is_available()

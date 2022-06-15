@@ -102,8 +102,9 @@ class KMnistConvModel(MnistConvModel):
 
 
 class MnistAttack(optimizee.Optimizee):
-    def __init__(self, attack_model, batch_size=1, channel=1, width=28, height=28, c=0.1, gap=0.0,
-                 loss_type="l1", initial_noise=True, mean=0.1307, std=0.3081, num_classes=10):
+
+    def __init__(self, attack_model, batch_size=1, convex_model=None, channel=1, width=28, height=28, c=0.1, gap=0.0,
+                 loss_type="l1", initial_noise=True, r=None, mean=0.1307, std=0.3081, num_classes=10):
         super(MnistAttack, self).__init__()
 
         if not initial_noise:
@@ -117,6 +118,7 @@ class MnistAttack(optimizee.Optimizee):
         self.gap = gap  # confidence parameter that guarantees a constant gap
 
         self.attack_model = attack_model
+        self.convex_model = convex_model
 
         self.bs = batch_size
 
@@ -124,6 +126,7 @@ class MnistAttack(optimizee.Optimizee):
         self.mean = mean
         self.std = std
         self.num_classes = num_classes
+        self.r = r
 
     def dataset_loader(self, data_dir, batch_size, test_batch_size, train_num=100, test_num=100):
         path = os.path.join(data_dir, "mnist_correct/label_correct_index.npy")
@@ -188,8 +191,11 @@ class MnistAttack(optimizee.Optimizee):
         loss_attack = loss_attack.mean()
 
         if not return_tuple:
-            return (loss_attack + self.c * loss_distort) * self.bs
+            loss =  (loss_attack + self.c * loss_distort) * self.bs
+            if self.convex_model is not None: loss += self.convex_model.loss()
+            return loss
         else:
+            if self.convex_model is not None: loss_distort += self.convex_model.loss() 
             return (loss_attack, self.c * loss_distort)
 
     def nondiff_loss(self, weight, x, tgt, batch_weight=False):
