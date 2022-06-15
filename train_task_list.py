@@ -29,6 +29,52 @@ tasks = {
             'base_lr': 4,
         }
     },
+    # train ZOAdam optimizer (UpdateRNN only) for MNIST attack
+    'ZOL2LAdam-Attack': {
+        'nn_optimizer': nn_optimizer.zoopt.ZOOptimizerAdam,
+        'optimizee': optimizee.mnist.MnistAttack,
+        'batch_size': 1,
+        'test_batch_size': 1,
+        'lr': 1e-3,
+        "max_epoch": 20,
+        'optimizer_steps': 200,
+        'test_optimizer_steps': 200,
+        'attack_model': optimizee.mnist.MnistConvModel,
+        'attack_model_ckpt': "./ckpt/attack_model/mnist_cnn.pt",
+        'tests': {
+            'optimizee': optimizee.mnist.MnistAttack,
+            'test_indexes': list(range(1, 11)),  # test image indexes
+            'test_num': 10,  # number of independent attacks
+            'n_steps': 200,
+            'test_batch_size': 1,
+            'nn_opt': nn_optimizer.zoopt.ZOOptimizerAdam,
+            'base_opt': nn_optimizer.basezoopt.BaseZOOptimizer,
+            'base_lr': 4,
+        }
+    },
+    # train ZOProp optimizer (UpdateRNN only) for MNIST attack
+    'ZOL2LProp-Attack': {
+        'nn_optimizer': nn_optimizer.zoopt.ZOOptimizerProp,
+        'optimizee': optimizee.mnist.MnistAttack,
+        'batch_size': 1,
+        'test_batch_size': 1,
+        'lr': 1e-3,
+        "max_epoch": 20,
+        'optimizer_steps': 200,
+        'test_optimizer_steps': 200,
+        'attack_model': optimizee.mnist.MnistConvModel,
+        'attack_model_ckpt': "./ckpt/attack_model/mnist_cnn.pt",
+        'tests': {
+            'optimizee': optimizee.mnist.MnistAttack,
+            'test_indexes': list(range(1, 11)),  # test image indexes
+            'test_num': 10,  # number of independent attacks
+            'n_steps': 200,
+            'test_batch_size': 1,
+            'nn_opt': nn_optimizer.zoopt.ZOOptimizerProp,
+            'base_opt': nn_optimizer.basezoopt.BaseZOOptimizer,
+            'base_lr': 4,
+        }
+    },
     # train ZO optimizer (both UpdateRNN and QueryRNN) for MNIST attack
     'VarReducedZOL2L-Attack': {
         'nn_optimizer': nn_optimizer.zoopt.VarReducedZOOptimizer,

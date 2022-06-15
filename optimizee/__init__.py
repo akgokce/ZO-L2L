@@ -6,6 +6,7 @@ from operator import mul
 from torch.autograd import Variable, Function
 
 from itertools import product
+from copy import deepcopy
 
 
 class Optimizee(nn.Module):
@@ -61,6 +62,21 @@ class Optimizee(nn.Module):
     def get_params_size(self):
         return self.get_params().size(0)
 
+    def random_scaling(self):
+        """
+        Apply random scaling to the parameters of the optimizee.
+        """
+        if hasattr(self, 'r'):
+            if self.r is None or 0: return
+            params = self.get_params()
+            c = 2 * self.r * torch.rand(params.shape, device=params.device, dtype=params.dtype) - self.r # Uniform sampling between (-self.r, self.r)
+            c = torch.exp(c)
+            self.set_params(c * params)
+
+    def copy(self):
+        return deepcopy(self)
+        
+
 
 class MetaModel:
     def __init__(self, model):
@@ -113,6 +129,12 @@ class MetaModel:
         for modelA, modelB in zip(self.model.parameters(), model.parameters()):
             modelB.data.copy_(modelA.data)
 
+    def copy_convex_model_from(self, model):
+        if model.convex_model is not None:
+            self.model.convex_model = model.convex_model.copy()
+        else:
+            self.model.convex_model = None
+
 
 class AttackModel:
     def __init__(self, model):
@@ -161,3 +183,4 @@ custom_loss = CustomLoss.apply
 
 
 from . import mnist
+from . import trivial
