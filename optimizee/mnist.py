@@ -74,9 +74,37 @@ class MnistConvModel(MnistModel):
         return F.log_softmax(x, dim=1)
 
 
+class EMnistConvModel(MnistConvModel):
+    def __init__(self):
+        super(MnistConvModel, self).__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5, 1)
+        self.conv2 = nn.Conv2d(20, 50, 5, 1)
+        self.fc1 = nn.Linear(4 * 4 * 50, 500)
+        self.fc2 = nn.Linear(500, 47)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        x = F.max_pool2d(x, 2, 2)
+        x = F.relu(self.conv2(x))
+        x = F.max_pool2d(x, 2, 2)
+        x = x.view(-1, 4 * 4 * 50)
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
+        return F.log_softmax(x, dim=1)
+
+
+class FMnistConvModel(MnistConvModel):
+    pass
+
+
+class KMnistConvModel(MnistConvModel):
+    pass
+
+
 class MnistAttack(optimizee.Optimizee):
+
     def __init__(self, attack_model, batch_size=1, convex_model=None, channel=1, width=28, height=28, c=0.1, gap=0.0,
-                 loss_type="l1", initial_noise=True, r=None):
+                 loss_type="l1", initial_noise=True, r=None, mean=0.1307, std=0.3081, num_classes=10):
         super(MnistAttack, self).__init__()
 
         if not initial_noise:
@@ -95,11 +123,12 @@ class MnistAttack(optimizee.Optimizee):
         self.bs = batch_size
 
         self.loss_type = loss_type
-
+        self.mean = mean
+        self.std = std
+        self.num_classes = num_classes
         self.r = r
 
-    @staticmethod
-    def dataset_loader(data_dir, batch_size, test_batch_size, train_num=100, test_num=100):
+    def dataset_loader(self, data_dir, batch_size, test_batch_size, train_num=100, test_num=100):
         path = os.path.join(data_dir, "mnist_correct/label_correct_index.npy")
         label_correct_indices = list(np.load(path))
         random.seed(1234)
@@ -109,35 +138,37 @@ class MnistAttack(optimizee.Optimizee):
 
         train_loader = torch.utils.data.DataLoader(
             datasets.MNIST(data_dir, train=False, download=True,
-                           transform=transforms.Compose([
-                               transforms.ToTensor(),
-                               transforms.Normalize((0.1307,), (0.3081,))
-                           ])),
+                        transform=transforms.Compose([
+                            transforms.ToTensor(),
+                            transforms.Normalize((self.mean,), (self.std,))
+                        ])),
             batch_size=batch_size, shuffle=False, sampler=SubsetRandomSampler(train_indices), drop_last=True)
 
         test_loader = torch.utils.data.DataLoader(
             Subset(datasets.MNIST(data_dir, train=False, transform=transforms.Compose([
                 transforms.ToTensor(),
-                transforms.Normalize((0.1307,), (0.3081,))
+                transforms.Normalize((self.mean,), (self.std,))
             ])), test_indices),
             batch_size=test_batch_size, shuffle=False)
 
         return train_loader, test_loader
 
-    @staticmethod
-    def data_denormalize(data):
-        return data * 0.3081 + 0.1307
+    def data_denormalize(self, data):
+        return data * self.std + self.mean
+
+    def data_normalize(self, data):
+        return (data - self.mean) / self.std
 
     def forward(self, x):
         x_ = x
-        x = x * 0.3081 + 0.1307  # [0, 1]
+        x = self.data_denormalize(x)  # [0, 1]
 
         perturb = self.weight
 
         fx = x + perturb
         fx.clamp_(0.0, 1.0)
 
-        fx = (fx - 0.1307) / 0.3081
+        fx = self.data_normalize(fx)
         return fx, x_
 
     def loss(self, fx, tgt, return_tuple=False):
@@ -150,7 +181,7 @@ class MnistAttack(optimizee.Optimizee):
             loss_distort = ((self.data_denormalize(x_attack) - self.data_denormalize(x)) ** 2).sum()
 
         pred_scores = self.attack_model.model(x_attack)  # log likelyhood: (B, 10)
-        tgt_onehot = F.one_hot(tgt, num_classes=10).type(pred_scores.dtype)  # (B, 10)
+        tgt_onehot = F.one_hot(tgt, num_classes=self.num_classes).type(pred_scores.dtype)  # (B, 10)
 
         correct_log_prob, correct_indices = torch.max(pred_scores - 1e9 * (1 - tgt_onehot), dim=1)
         assert torch.equal(correct_indices, tgt), (
@@ -170,12 +201,12 @@ class MnistAttack(optimizee.Optimizee):
     def nondiff_loss(self, weight, x, tgt, batch_weight=False):
         if not batch_weight:
             x_ = x
-            x = x * 0.3081 + 0.1307  # [0, 1]
+            x = self.data_denormalize(x) # [0, 1]
 
             fx = x + weight
             fx.clamp_(0.0, 1.0)
 
-            fx = (fx - 0.1307) / 0.3081
+            fx = self.data_normalize(fx)
 
             x_attack, x = fx, x_
 
@@ -185,7 +216,7 @@ class MnistAttack(optimizee.Optimizee):
                 loss_distort = ((self.data_denormalize(x_attack) - self.data_denormalize(x)) ** 2).sum()
 
             pred_scores = self.attack_model.model(x_attack)  # log likelyhood: (B, 10)
-            tgt_onehot = F.one_hot(tgt, num_classes=10).type(pred_scores.dtype)  # (B, 10)
+            tgt_onehot = F.one_hot(tgt, num_classes=self.num_classes).type(pred_scores.dtype)  # (B, 10)
 
             correct_log_prob, correct_indices = torch.max(pred_scores - 1e9 * (1 - tgt_onehot), dim=1)
             assert torch.equal(correct_indices, tgt), (
@@ -197,12 +228,12 @@ class MnistAttack(optimizee.Optimizee):
             return (loss_attack + self.c * loss_distort) * self.bs
         else:
             x_ = x.unsqueeze(0)  # (1, B, *)
-            x = x * 0.3081 + 0.1307  # [0, 1]
+            x = self.data_denormalize(x)  # [0, 1]
 
             fx = x + weight  # (B_weight, B, *)
             fx.clamp_(0.0, 1.0)
 
-            fx = (fx - 0.1307) / 0.3081
+            fx = self.data_normalize(fx)
 
             x_attack, x = fx, x_
             x_attack_shape = x_attack.size()
@@ -217,7 +248,7 @@ class MnistAttack(optimizee.Optimizee):
                 x_attack.view(-1, x_attack_shape[2], x_attack_shape[3], x_attack_shape[4])).view(x_attack_shape[0],
                                                                                                  x_attack_shape[1],
                                                                                                  10)  # log likelyhood: (B_weight, B, 10)
-            tgt_onehot = F.one_hot(tgt, num_classes=10).type(pred_scores.dtype).unsqueeze(1)  # (1, B, 10)
+            tgt_onehot = F.one_hot(tgt, num_classes=self.num_classes).type(pred_scores.dtype).unsqueeze(1)  # (1, B, 10)
 
             correct_log_prob, correct_indices = torch.max(pred_scores - 1e9 * (1 - tgt_onehot), dim=2)  # (B_weight, B)
             assert torch.equal(correct_indices, tgt.expand_as(correct_indices)), (
@@ -227,3 +258,83 @@ class MnistAttack(optimizee.Optimizee):
             loss_attack = loss_attack.mean(dim=1)
 
             return (loss_attack + self.c * loss_distort) * self.bs
+
+
+class EMnistAttack(MnistAttack):
+    def dataset_loader(self, data_dir, batch_size, test_batch_size, train_num=100, test_num=100):
+        path = os.path.join(data_dir, "emnist_correct/label_correct_index.npy")
+        label_correct_indices = list(np.load(path))
+        random.seed(1234)
+        random.shuffle(label_correct_indices)
+        train_indices = label_correct_indices[:train_num]
+        test_indices = label_correct_indices[5000:5000 + test_num]
+
+        train_loader = torch.utils.data.DataLoader(
+            datasets.EMNIST(data_dir, split="balanced", train=True, download=True,
+                        transform=transforms.Compose([
+                            transforms.ToTensor(),
+                            transforms.Normalize((self.mean,), (self.std,))
+                        ])),
+            batch_size=batch_size, shuffle=False, sampler=SubsetRandomSampler(train_indices), drop_last=True)
+        test_loader = torch.utils.data.DataLoader(
+            Subset(datasets.EMNIST(data_dir, split="balanced", train=False, transform=transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Normalize((self.mean,), (self.std,))
+            ])), test_indices),
+            batch_size=test_batch_size, shuffle=False) 
+
+        return train_loader, test_loader
+
+
+class FMnistAttack(MnistAttack):
+    def dataset_loader(self, data_dir, batch_size, test_batch_size, train_num=100, test_num=100):
+        path = os.path.join(data_dir, "fmnist_correct/label_correct_index.npy")
+        label_correct_indices = list(np.load(path))
+        random.seed(1234)
+        random.shuffle(label_correct_indices)
+        train_indices = label_correct_indices[:train_num]
+        test_indices = label_correct_indices[5000:5000 + test_num]
+
+        train_loader = torch.utils.data.DataLoader(
+            datasets.FashionMNIST(data_dir, train=False, download=True,
+                        transform=transforms.Compose([
+                            transforms.ToTensor(),
+                            transforms.Normalize((self.mean,), (self.std,))
+                        ])),
+            batch_size=batch_size, shuffle=False, sampler=SubsetRandomSampler(train_indices), drop_last=True)
+        train_loader = None
+        test_loader = torch.utils.data.DataLoader(
+            Subset(datasets.FashionMNIST(data_dir, train=False, transform=transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Normalize((self.mean,), (self.std,))
+            ])), test_indices),
+            batch_size=test_batch_size, shuffle=False) 
+
+        return train_loader, test_loader
+
+
+class KMnistAttack(MnistAttack):
+    def dataset_loader(self, data_dir, batch_size, test_batch_size, train_num=100, test_num=100):
+        path = os.path.join(data_dir, "kmnist_correct/label_correct_index.npy")
+        label_correct_indices = list(np.load(path))
+        random.seed(1234)
+        random.shuffle(label_correct_indices)
+        train_indices = label_correct_indices[:train_num]
+        test_indices = label_correct_indices[5000:5000 + test_num]
+
+        train_loader = torch.utils.data.DataLoader(
+            datasets.KMNIST(data_dir, train=False, download=True,
+                        transform=transforms.Compose([
+                            transforms.ToTensor(),
+                            transforms.Normalize((self.mean,), (self.std,))
+                        ])),
+            batch_size=batch_size, shuffle=False, sampler=SubsetRandomSampler(train_indices), drop_last=True)
+        train_loader = None
+        test_loader = torch.utils.data.DataLoader(
+            Subset(datasets.KMNIST(data_dir, train=False, transform=transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Normalize((self.mean,), (self.std,))
+            ])), test_indices),
+            batch_size=test_batch_size, shuffle=False) 
+
+        return train_loader, test_loader
