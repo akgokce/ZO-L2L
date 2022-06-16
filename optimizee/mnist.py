@@ -114,9 +114,8 @@ class MnistAttack(optimizee.Optimizee):
         self.num_classes = num_classes
         self.r = r
 
-    def dataset_loader(self, data_dir, batch_size, test_batch_size, train_num=100, test_num=100):
-        path = os.path.join(data_dir, "mnist_correct/label_correct_index.npy")
-        label_correct_indices = list(np.load(path))
+    def dataset_loader(self, data_dir, batch_size, test_batch_size, train_num=100, test_num=100, index_path="data/mnist_correct/label_correct_index.npy"):
+        label_correct_indices = list(np.load(index_path))
         random.seed(1234)
         random.shuffle(label_correct_indices)
         train_indices = label_correct_indices[:train_num]
@@ -247,9 +246,8 @@ class MnistAttack(optimizee.Optimizee):
 
 
 class EMnistAttack(MnistAttack):
-    def dataset_loader(self, data_dir, batch_size, test_batch_size, train_num=100, test_num=100):
-        path = os.path.join(data_dir, "emnist_correct/label_correct_index.npy")
-        label_correct_indices = list(np.load(path))
+    def dataset_loader(self, data_dir, batch_size, test_batch_size, train_num=100, test_num=100, index_path="data/emnist_correct/label_correct_index.npy"):
+        label_correct_indices = list(np.load(index_path))
         random.seed(1234)
         random.shuffle(label_correct_indices)
         train_indices = label_correct_indices[:train_num]
@@ -273,9 +271,8 @@ class EMnistAttack(MnistAttack):
 
 
 class FMnistAttack(MnistAttack):
-    def dataset_loader(self, data_dir, batch_size, test_batch_size, train_num=100, test_num=100):
-        path = os.path.join(data_dir, "fmnist_correct/label_correct_index.npy")
-        label_correct_indices = list(np.load(path))
+    def dataset_loader(self, data_dir, batch_size, test_batch_size, train_num=100, test_num=100, index_path="data/fmnist_correct/label_correct_index.npy"):
+        label_correct_indices = list(np.load(index_path))
         random.seed(1234)
         random.shuffle(label_correct_indices)
         train_indices = label_correct_indices[:train_num]
@@ -300,9 +297,8 @@ class FMnistAttack(MnistAttack):
 
 
 class KMnistAttack(MnistAttack):
-    def dataset_loader(self, data_dir, batch_size, test_batch_size, train_num=100, test_num=100):
-        path = os.path.join(data_dir, "kmnist_correct/label_correct_index.npy")
-        label_correct_indices = list(np.load(path))
+    def dataset_loader(self, data_dir, batch_size, test_batch_size, train_num=100, test_num=100, index_path="data/kmnist_correct/label_correct_index.npy"):
+        label_correct_indices = list(np.load(index_path))
         random.seed(1234)
         random.shuffle(label_correct_indices)
         train_indices = label_correct_indices[:train_num]

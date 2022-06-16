@@ -1,0 +1,40 @@
+
+Epoch: 1, initial loss: 0.002838134765625, final loss: nan, average final/initial loss ratio: nan, test loss: nan, test loss ratio: nan
+
+Epoch: 2, initial loss: 0.0032405853271484375, final loss: nan, average final/initial loss ratio: nan, test loss: nan, test loss ratio: nan
+
+Epoch: 3, initial loss: 0.0029773712158203125, final loss: nan, average final/initial loss ratio: nan, test loss: nan, test loss ratio: nan
+
+Epoch: 4, initial loss: 0.00307464599609375, final loss: nan, average final/initial loss ratio: nan, test loss: nan, test loss ratio: nan
+
+Epoch: 5, initial loss: 0.002880096435546875, final loss: nan, average final/initial loss ratio: nan, test loss: nan, test loss ratio: nan
+
+Epoch: 6, initial loss: 0.0027637481689453125, final loss: nan, average final/initial loss ratio: nan, test loss: nan, test loss ratio: nan
+
+Epoch: 7, initial loss: 0.0026607513427734375, final loss: nan, average final/initial loss ratio: nan, test loss: nan, test loss ratio: nan
+
+Epoch: 8, initial loss: 0.00301361083984375, final loss: nan, average final/initial loss ratio: nan, test loss: nan, test loss ratio: nan
+
+Epoch: 9, initial loss: 0.003204345703125, final loss: nan, average final/initial loss ratio: nan, test loss: nan, test loss ratio: nan
+
+Epoch: 10, initial loss: 0.003154754638671875, final loss: nan, average final/initial loss ratio: nan, test loss: nan, test loss ratio: nan
+
+Epoch: 11, initial loss: 0.0025501251220703125, final loss: nan, average final/initial loss ratio: nan, test loss: nan, test loss ratio: nan
+
+Epoch: 12, initial loss: 0.002910614013671875, final loss: nan, average final/initial loss ratio: nan, test loss: nan, test loss ratio: nan
+
+Epoch: 13, initial loss: 0.0025634765625, final loss: nan, average final/initial loss ratio: nan, test loss: nan, test loss ratio: nan
+
+Epoch: 14, initial loss: 0.00274658203125, final loss: nan, average final/initial loss ratio: nan, test loss: nan, test loss ratio: nan
+
+Epoch: 15, initial loss: 0.00283050537109375, final loss: nan, average final/initial loss ratio: nan, test loss: nan, test loss ratio: nan
+
+Epoch: 16, initial loss: 0.0029163360595703125, final loss: nan, average final/initial loss ratio: nan, test loss: nan, test loss ratio: nan
+
+Epoch: 17, initial loss: 0.0029773712158203125, final loss: nan, average final/initial loss ratio: nan, test loss: nan, test loss ratio: nan
+
+Epoch: 18, initial loss: 0.0026721954345703125, final loss: nan, average final/initial loss ratio: nan, test loss: nan, test loss ratio: nan
+
+Epoch: 19, initial loss: 0.0029964447021484375, final loss: nan, average final/initial loss ratio: nan, test loss: nan, test loss ratio: nan
+
+Epoch: 20, initial loss: 0.002391815185546875, final loss: nan, average final/initial loss ratio: nan, test loss: nan, test loss ratio: nan

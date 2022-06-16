@@ -1,0 +1,40 @@
+
+Epoch: 1, initial loss: 16.32225982220337, final loss: 2.7794685176449914, average final/initial loss ratio: 0.2620214423977193, test loss: 28.274022086280965, test loss ratio: 2.821543537274833
+
+Epoch: 2, initial loss: 5.594681649221954, final loss: 1.4817167677794452, average final/initial loss ratio: 0.13908537221136405, test loss: 31.204820720342337, test loss ratio: 3.0852000910132866
+
+Epoch: 3, initial loss: 10.616620939869858, final loss: 1.7142762102452092, average final/initial loss ratio: 0.15171894823447232, test loss: 28.3330038011907, test loss ratio: 2.8066335464093477
+
+Epoch: 4, initial loss: 18.10069365209189, final loss: 1.6806475591419918, average final/initial loss ratio: 0.14637143231554703, test loss: 27.85800520278382, test loss ratio: 2.7914513962056855
+
+Epoch: 5, initial loss: 9.111633292902233, final loss: 1.744934958885418, average final/initial loss ratio: 0.1700880873638438, test loss: 27.957721836039855, test loss ratio: 2.794348423691719
+
+Epoch: 6, initial loss: 14.039793380606147, final loss: 2.207252857758482, average final/initial loss ratio: 0.19688831047306815, test loss: 27.853355847192486, test loss ratio: 2.7706814468004928
+
+Epoch: 7, initial loss: 20.005608547454077, final loss: 2.1440492827350335, average final/initial loss ratio: 0.17631041261729463, test loss: 28.327033069490206, test loss ratio: 2.8234541984940438
+
+Epoch: 8, initial loss: 8.96501156866251, final loss: 2.3162804814805105, average final/initial loss ratio: 0.17343479326214356, test loss: 27.79997814778499, test loss ratio: 2.7838739178889447
+
+Epoch: 9, initial loss: 9.946201939443581, final loss: 1.7382498637472512, average final/initial loss ratio: 0.15110500608084612, test loss: 28.415858691907445, test loss ratio: 2.8070058693471194
+
+Epoch: 10, initial loss: 12.915450281231674, final loss: 1.738377609484516, average final/initial loss ratio: 0.15323974262126897, test loss: 27.155079896546894, test loss ratio: 2.705232745380545
+
+Epoch: 11, initial loss: 9.347037119087133, final loss: 1.956816444113515, average final/initial loss ratio: 0.14632381918557963, test loss: 27.15699103010305, test loss ratio: 2.6932477036861906
+
+Epoch: 12, initial loss: 3.0119976744233563, final loss: 1.497449358049551, average final/initial loss ratio: 0.14147267940904187, test loss: 26.556973981074808, test loss ratio: 2.6643024584993453
+
+Epoch: 13, initial loss: 16.32225982220337, final loss: 1.6807212181747944, average final/initial loss ratio: 0.131092547914997, test loss: 26.108558954864115, test loss ratio: 2.605911260466477
+
+Epoch: 14, initial loss: 6.264554814778577, final loss: 1.1022046913748378, average final/initial loss ratio: 0.1785052315962507, test loss: 29.94909619990655, test loss ratio: 2.913667888017623
+
+Epoch: 15, initial loss: 11.312983796689197, final loss: 2.2379856125928415, average final/initial loss ratio: 0.1591103956812576, test loss: 26.586959045042576, test loss ratio: 2.684094766331837
+
+Epoch: 16, initial loss: 14.668085564018302, final loss: 1.6202358782954362, average final/initial loss ratio: 0.16479061901425648, test loss: 28.83354430609362, test loss ratio: 2.8706029815618077
+
+Epoch: 17, initial loss: 20.005608547454077, final loss: 2.465704105200166, average final/initial loss ratio: 0.18974396507363814, test loss: 29.531271467963837, test loss ratio: 2.9281131648356142
+
+Epoch: 18, initial loss: 7.024128212824756, final loss: 1.332863662500714, average final/initial loss ratio: 0.13973831825070018, test loss: 26.181422469370414, test loss ratio: 2.578975867502835
+
+Epoch: 19, initial loss: 12.74664393093405, final loss: 1.6773827723713957, average final/initial loss ratio: 0.1600411431772098, test loss: 26.10817260046796, test loss ratio: 2.605490581018515
+
+Epoch: 20, initial loss: 11.449062398578906, final loss: 2.0633567321140527, average final/initial loss ratio: 0.1759420467115002, test loss: 28.705818497725712, test loss ratio: 2.8489303715609178
