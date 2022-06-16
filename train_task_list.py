@@ -53,6 +53,9 @@ tasks = {
             'nn_opt': nn_optimizer.zoopt.ZOOptimizerAdam,
             'base_opt': nn_optimizer.basezoopt.BaseZOOptimizer,
             'base_lr': 4,
+            'mean': 0.1307,
+            'std': 0.3081,
+            "num_classes": 10
         }
     },
     # train ZOProp optimizer (UpdateRNN only) for MNIST attack
@@ -76,6 +79,9 @@ tasks = {
             'nn_opt': nn_optimizer.zoopt.ZOOptimizerProp,
             'base_opt': nn_optimizer.basezoopt.BaseZOOptimizer,
             'base_lr': 4,
+            'mean': 0.1307,
+            'std': 0.3081,
+            "num_classes": 10
         }
     },
     # train ZO optimizer (both UpdateRNN and QueryRNN) for MNIST attack
