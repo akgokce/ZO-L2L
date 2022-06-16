@@ -605,3 +605,12 @@ if __name__ == "__main__":
 
     set_default_precision(args.precision)
     main(args)
+
+#python main_attack.py --exp_name ZO_attack_mnist-tbptt_20_steps_50 --train_task ZOL2L-Attack --gpu_num 0 --train optimizer_attack --truncated_bptt_step 20
+
+#python main_attack.py --exp_name VarReduced_ZO_attack_mnist_tbptt_20_steps_200 --train_task VarReducedZOL2L-Attack --gpu_num 0 --train optimizer_attack --warm_start_ckpt ./output/ZO_attack_mnist-tbptt_20_steps_200/ckpt_best --truncated_bptt_step 20
+
+#python main_attack.py --exp_name VarReduced_ZO_attack_mnist_tbptt_10_steps_100 --train_task VarReducedZOL2L-Attack --gpu_num 0 --train optimizer_train_optimizee_attack --ckpt_path ckpt_best --save_loss --save_fig
+
+
+#python main_attack.py --exp_name NN-SCRATCH --train_task nn-scratch --gpu_num 0 --train train_optimizer_nn_scratch --use_finite_diff

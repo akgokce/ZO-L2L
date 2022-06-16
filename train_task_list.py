@@ -14,15 +14,15 @@ tasks = {
         'test_batch_size': 1,
         'lr': 1e-3,
         "max_epoch": 20,
-        'optimizer_steps': 200,
-        'test_optimizer_steps': 200,
+        'optimizer_steps': 50,
+        'test_optimizer_steps': 50,
         'attack_model': optimizee.mnist.MnistConvModel,
         'attack_model_ckpt': "./ckpt/attack_model/mnist_cnn.pt",
         'tests': {
             'optimizee': optimizee.mnist.MnistAttack,
             'test_indexes': list(range(1, 11)),  # test image indexes
             'test_num': 10,  # number of independent attacks
-            'n_steps': 200,
+            'n_steps': 50,
             'test_batch_size': 1,
             'nn_opt': nn_optimizer.zoopt.ZOOptimizer,
             'base_opt': nn_optimizer.basezoopt.BaseZOOptimizer,
@@ -37,15 +37,15 @@ tasks = {
         'test_batch_size': 1,
         'lr': 0.005,
         "max_epoch": 40,
-        'optimizer_steps': 200,
-        'test_optimizer_steps': 200,
+        'optimizer_steps': 50,
+        'test_optimizer_steps': 50,
         'attack_model': optimizee.mnist.MnistConvModel,
         'attack_model_ckpt': "./ckpt/attack_model/mnist_cnn.pt",
         'tests': {
             'optimizee': optimizee.mnist.MnistAttack,
             'test_indexes': list(range(1, 11)),  # test image indexes
             'test_num': 10,  # number of independent attacks
-            'n_steps': 200,
+            'n_steps': 100,
             'test_batch_size': 1,
             'nn_opt': nn_optimizer.zoopt.VarReducedZOOptimizer,
             'base_opt': nn_optimizer.basezoopt.BaseZOOptimizer,
