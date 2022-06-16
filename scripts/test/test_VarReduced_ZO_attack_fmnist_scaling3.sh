@@ -1,4 +1,4 @@
-python ../../main_attack.py \
+python main_attack.py \
     --exp_name VarReduced_ZO_attack_fmnist_scaling3 \
     --train_task VarReducedZOL2L-Attack-FMNIST \
     --gpu_num 0 \
