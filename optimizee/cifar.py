@@ -33,9 +33,8 @@ class CIFAR10Model(optimizee.mnist.MnistModel):
 
 
 class CIFAR10Attack(optimizee.mnist.MnistAttack):
-    def dataset_loader(self, data_dir, batch_size, test_batch_size, train_num=100, test_num=100):
-        path = os.path.join(data_dir, "cifar_correct/label_correct_index.npy")
-        label_correct_indices = list(np.load(path))
+    def dataset_loader(self, data_dir, batch_size, test_batch_size, train_num=100, test_num=100, index_path="data/cifar_correct/label_correct_index.npy"):
+        label_correct_indices = list(np.load(index_path))
         random.seed(1234)
         random.shuffle(label_correct_indices)
         train_indices = label_correct_indices[:train_num]
