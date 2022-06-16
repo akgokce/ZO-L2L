@@ -24,7 +24,7 @@ As mentioned, this repository has been forked from the original [repo](https://g
 
 - [train_task_list.py](train_task_list)
 
-    This file contains the configurations for our experiments. Our scripts specify the task to be run and main_attack.py reads from this file to locate the experiment configurations.
+    This file contains the configurations for our experiments. Our scripts specify the task to be run and [main_attack.py](main_attack.py) reads from this file to locate the experiment configurations.
 
 - [utils.py](utils.py)
 
@@ -32,7 +32,7 @@ As mentioned, this repository has been forked from the original [repo](https://g
 
 - [scripts](scripts)
 
-    This directory contains various training and testing scripts to run our experiments. We have named each script such that it is largely self-explanatory (i.e. specifies attack task, optimization trick used etc.)
+    This directory contains various training and testing scripts to run our experiments. We have named each script such that it is largely self-explanatory (i.e. specifies attack task, optimization trick used etc.). Note that all scripts should be run from the root directory to be able to resolve file paths correctly.
 
 - [output](output)
 
