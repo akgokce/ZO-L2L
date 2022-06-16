@@ -17,7 +17,7 @@ tasks = {
         'optimizer_steps': 200,
         'test_optimizer_steps': 200,
         'attack_model': optimizee.mnist.MnistConvModel,
-        'attack_model_ckpt': "../../ckpt/attack_model/mnist_cnn.pt",
+        'attack_model_ckpt': "./ckpt/attack_model/mnist_cnn.pt",
         'tests': {
             'optimizee': optimizee.mnist.MnistAttack,
             'test_indexes': list(range(1, 11)),  # test image indexes
@@ -30,7 +30,7 @@ tasks = {
             'mean': 0.1307,
             'std': 0.3081,
             "num_classes": 10,
-            "index_path": "../../data/mnist_correct/label_correct_index.npy"
+            "index_path": "./data/mnist_correct/label_correct_index.npy"
         }
     },
     # train ZOAdam optimizer (UpdateRNN only) for MNIST attack
@@ -44,7 +44,7 @@ tasks = {
         'optimizer_steps': 200,
         'test_optimizer_steps': 200,
         'attack_model': optimizee.mnist.MnistConvModel,
-        'attack_model_ckpt': "../../ckpt/attack_model/mnist_cnn.pt",
+        'attack_model_ckpt': "./ckpt/attack_model/mnist_cnn.pt",
         'tests': {
             'optimizee': optimizee.mnist.MnistAttack,
             'test_indexes': list(range(1, 11)),  # test image indexes
@@ -57,7 +57,7 @@ tasks = {
             'mean': 0.1307,
             'std': 0.3081,
             "num_classes": 10,
-            "index_path": "../../data/mnist_correct/label_correct_index.npy"
+            "index_path": "./data/mnist_correct/label_correct_index.npy"
         }
     },
     # train ZOProp optimizer (UpdateRNN only) for MNIST attack
@@ -71,7 +71,7 @@ tasks = {
         'optimizer_steps': 200,
         'test_optimizer_steps': 200,
         'attack_model': optimizee.mnist.MnistConvModel,
-        'attack_model_ckpt': "../../ckpt/attack_model/mnist_cnn.pt",
+        'attack_model_ckpt': "./ckpt/attack_model/mnist_cnn.pt",
         'tests': {
             'optimizee': optimizee.mnist.MnistAttack,
             'test_indexes': list(range(1, 11)),  # test image indexes
@@ -84,7 +84,7 @@ tasks = {
             'mean': 0.1307,
             'std': 0.3081,
             "num_classes": 10,
-            "index_path": "../../data/mnist_correct/label_correct_index.npy"
+            "index_path": "./data/mnist_correct/label_correct_index.npy"
         }
     },
     # train ZO optimizer (both UpdateRNN and QueryRNN) for MNIST attack
@@ -98,7 +98,7 @@ tasks = {
         'optimizer_steps': 200,
         'test_optimizer_steps': 200,
         'attack_model': optimizee.mnist.MnistConvModel,
-        'attack_model_ckpt': "../../ckpt/attack_model/mnist_cnn.pt",
+        'attack_model_ckpt': "./ckpt/attack_model/mnist_cnn.pt",
         'tests': {
             'optimizee': optimizee.mnist.MnistAttack,
             'test_indexes': list(range(1, 11)),  # test image indexes
@@ -117,7 +117,7 @@ tasks = {
             'mean': 0.1307,
             'std': 0.3081,
             "num_classes": 10,
-            "index_path": "../../data/mnist_correct/label_correct_index.npy"
+            "index_path": "./data/mnist_correct/label_correct_index.npy"
             # 'nn_opt_no_query': nn_optimizer.zoopt.VarReducedZOOptimizer,
             # 'nn_opt_no_update': nn_optimizer.zoopt.VarReducedZOOptimizer,
             # 'nn_opt_guided': nn_optimizer.zoopt.VarReducedZOOptimizer,
@@ -134,7 +134,7 @@ tasks = {
         'optimizer_steps': 200,
         'test_optimizer_steps': 200,
         'attack_model': optimizee.mnist.EMnistConvModel,
-        'attack_model_ckpt': "../../ckpt/attack_model/emnist_cnn.pt",
+        'attack_model_ckpt': "./ckpt/attack_model/emnist_cnn.pt",
         'tests': {
             'optimizee': optimizee.mnist.EMnistAttack,
             'test_indexes': list(range(1, 3)),  # test image indexes
@@ -153,7 +153,7 @@ tasks = {
             "mean": 0.1751,
             "std": 0.3332,
             "num_classes": 47,
-            "index_path": "../../data/emnist_correct/label_correct_index.npy"
+            "index_path": "./data/emnist_correct/label_correct_index.npy"
             # 'nn_opt_no_query': nn_optimizer.zoopt.VarReducedZOOptimizer,
             # 'nn_opt_no_update': nn_optimizer.zoopt.VarReducedZOOptimizer,
             # 'nn_opt_guided': nn_optimizer.zoopt.VarReducedZOOptimizer,
@@ -170,7 +170,7 @@ tasks = {
         'optimizer_steps': 200,
         'test_optimizer_steps': 200,
         'attack_model': optimizee.mnist.FMnistConvModel,
-        'attack_model_ckpt': "../../ckpt/attack_model/fmnist_cnn.pt",
+        'attack_model_ckpt': "./ckpt/attack_model/fmnist_cnn.pt",
         'tests': {
             'optimizee': optimizee.mnist.FMnistAttack,
             'test_indexes': list(range(1, 3)),  # test image indexes
@@ -189,7 +189,7 @@ tasks = {
             "mean": 0.2860,
             "std": 0.3530,
             "num_classes": 10,
-            "index_path": "../../data/fmnist_correct/label_correct_index.npy"
+            "index_path": "./data/fmnist_correct/label_correct_index.npy"
             # 'nn_opt_no_query': nn_optimizer.zoopt.VarReducedZOOptimizer,
             # 'nn_opt_no_update': nn_optimizer.zoopt.VarReducedZOOptimizer,
             # 'nn_opt_guided': nn_optimizer.zoopt.VarReducedZOOptimizer,
@@ -206,7 +206,7 @@ tasks = {
         'optimizer_steps': 200,
         'test_optimizer_steps': 200,
         'attack_model': optimizee.cifar.CIFAR10Model,
-        'attack_model_ckpt': "../../ckpt/attack_model/cifar_cnn.pt",
+        'attack_model_ckpt': "./ckpt/attack_model/cifar_cnn.pt",
         'tests': {
             'optimizee': optimizee.cifar.CIFAR10Attack,
             'test_indexes': list(range(1, 3)),  # test image indexes
@@ -225,7 +225,7 @@ tasks = {
             "mean": 0.4809,
             "std": 0.2333,
             "num_classes": 10,
-            "index_path": "../../data/cifar_correct/label_correct_index.npy"
+            "index_path": "./data/cifar_correct/label_correct_index.npy"
             # 'nn_opt_no_query': nn_optimizer.zoopt.VarReducedZOOptimizer,
             # 'nn_opt_no_update': nn_optimizer.zoopt.VarReducedZOOptimizer,
             # 'nn_opt_guided': nn_optimizer.zoopt.VarReducedZOOptimizer,
@@ -242,7 +242,7 @@ tasks = {
         'optimizer_steps': 200,
         'test_optimizer_steps': 200,
         'attack_model': optimizee.mnist.KMnistConvModel,
-        'attack_model_ckpt': "../../ckpt/attack_model/kmnist_cnn.pt",
+        'attack_model_ckpt': "./ckpt/attack_model/kmnist_cnn.pt",
         'tests': {
             'optimizee': optimizee.mnist.KMnistAttack,
             'test_indexes': list(range(1, 3)),  # test image indexes
@@ -261,7 +261,7 @@ tasks = {
             "mean": 0.1918,
             "std": 0.3483,
             "num_classes": 10,
-            "index_path": "../../data/kmnist_correct/label_correct_index.npy"
+            "index_path": "./data/kmnist_correct/label_correct_index.npy"
             # 'nn_opt_no_query': nn_optimizer.zoopt.VarReducedZOOptimizer,
             # 'nn_opt_no_update': nn_optimizer.zoopt.VarReducedZOOptimizer,
             # 'nn_opt_guided': nn_optimizer.zoopt.VarReducedZOOptimizer,
@@ -278,7 +278,7 @@ tasks = {
         'optimizer_steps': 200,
         'test_optimizer_steps': 200,
         'attack_model': optimizee.mnist.FMnistConvModel,
-        'attack_model_ckpt': "../../ckpt/attack_model/fmnist_cnn.pt",
+        'attack_model_ckpt': "./ckpt/attack_model/fmnist_cnn.pt",
         'tests': {
             'optimizee': optimizee.mnist.FMnistAttack,
             'test_indexes': list(range(1, 3)),  # test image indexes
@@ -297,7 +297,7 @@ tasks = {
             "mean": 0.2860,
             "std": 0.3530,
             "num_classes": 10,
-            "index_path": "../../data/fmnist_correct/label_correct_index.npy"
+            "index_path": "./data/fmnist_correct/label_correct_index.npy"
             # 'nn_opt_no_query': nn_optimizer.zoopt.VarReducedZOOptimizer,
             # 'nn_opt_no_update': nn_optimizer.zoopt.VarReducedZOOptimizer,
             # 'nn_opt_guided': nn_optimizer.zoopt.VarReducedZOOptimizer,
@@ -314,7 +314,7 @@ tasks = {
         'optimizer_steps': 200,
         'test_optimizer_steps': 200,
         'attack_model': optimizee.cifar.CIFAR10Model,
-        'attack_model_ckpt': "../../ckpt/attack_model/cifar_cnn.pt",
+        'attack_model_ckpt': "./ckpt/attack_model/cifar_cnn.pt",
         'tests': {
             'optimizee': optimizee.cifar.CIFAR10Attack,
             'test_indexes': list(range(1, 3)),  # test image indexes
@@ -333,7 +333,7 @@ tasks = {
             "mean": 0.4809,
             "std": 0.2333,
             "num_classes": 10,
-            "index_path": "../../data/cifar_correct/label_correct_index.npy"
+            "index_path": "./data/cifar_correct/label_correct_index.npy"
             # 'nn_opt_no_query': nn_optimizer.zoopt.VarReducedZOOptimizer,
             # 'nn_opt_no_update': nn_optimizer.zoopt.VarReducedZOOptimizer,
             # 'nn_opt_guided': nn_optimizer.zoopt.VarReducedZOOptimizer,
