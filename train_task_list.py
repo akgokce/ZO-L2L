@@ -17,7 +17,7 @@ tasks = {
         'optimizer_steps': 200,
         'test_optimizer_steps': 200,
         'attack_model': optimizee.mnist.MnistConvModel,
-        'attack_model_ckpt': "./ckpt/attack_model/mnist_cnn.pt",
+        'attack_model_ckpt': "../../ckpt/attack_model/mnist_cnn.pt",
         'tests': {
             'optimizee': optimizee.mnist.MnistAttack,
             'test_indexes': list(range(1, 11)),  # test image indexes
@@ -44,7 +44,7 @@ tasks = {
         'optimizer_steps': 200,
         'test_optimizer_steps': 200,
         'attack_model': optimizee.mnist.MnistConvModel,
-        'attack_model_ckpt': "./ckpt/attack_model/mnist_cnn.pt",
+        'attack_model_ckpt': "../../ckpt/attack_model/mnist_cnn.pt",
         'tests': {
             'optimizee': optimizee.mnist.MnistAttack,
             'test_indexes': list(range(1, 11)),  # test image indexes
@@ -71,7 +71,7 @@ tasks = {
         'optimizer_steps': 200,
         'test_optimizer_steps': 200,
         'attack_model': optimizee.mnist.MnistConvModel,
-        'attack_model_ckpt': "./ckpt/attack_model/mnist_cnn.pt",
+        'attack_model_ckpt': "../../ckpt/attack_model/mnist_cnn.pt",
         'tests': {
             'optimizee': optimizee.mnist.MnistAttack,
             'test_indexes': list(range(1, 11)),  # test image indexes
@@ -98,7 +98,7 @@ tasks = {
         'optimizer_steps': 200,
         'test_optimizer_steps': 200,
         'attack_model': optimizee.mnist.MnistConvModel,
-        'attack_model_ckpt': "./ckpt/attack_model/mnist_cnn.pt",
+        'attack_model_ckpt': "../../ckpt/attack_model/mnist_cnn.pt",
         'tests': {
             'optimizee': optimizee.mnist.MnistAttack,
             'test_indexes': list(range(1, 11)),  # test image indexes
@@ -134,7 +134,7 @@ tasks = {
         'optimizer_steps': 200,
         'test_optimizer_steps': 200,
         'attack_model': optimizee.mnist.EMnistConvModel,
-        'attack_model_ckpt': "./ckpt/attack_model/emnist_cnn.pt",
+        'attack_model_ckpt': "../../ckpt/attack_model/emnist_cnn.pt",
         'tests': {
             'optimizee': optimizee.mnist.EMnistAttack,
             'test_indexes': list(range(1, 3)),  # test image indexes
@@ -170,7 +170,7 @@ tasks = {
         'optimizer_steps': 200,
         'test_optimizer_steps': 200,
         'attack_model': optimizee.mnist.FMnistConvModel,
-        'attack_model_ckpt': "./ckpt/attack_model/fmnist_cnn.pt",
+        'attack_model_ckpt': "../../ckpt/attack_model/fmnist_cnn.pt",
         'tests': {
             'optimizee': optimizee.mnist.FMnistAttack,
             'test_indexes': list(range(1, 3)),  # test image indexes
@@ -206,7 +206,7 @@ tasks = {
         'optimizer_steps': 200,
         'test_optimizer_steps': 200,
         'attack_model': optimizee.cifar.CIFAR10Model,
-        'attack_model_ckpt': "./ckpt/attack_model/cifar_cnn.pt",
+        'attack_model_ckpt': "../../ckpt/attack_model/cifar_cnn.pt",
         'tests': {
             'optimizee': optimizee.cifar.CIFAR10Attack,
             'test_indexes': list(range(1, 3)),  # test image indexes
@@ -242,7 +242,7 @@ tasks = {
         'optimizer_steps': 200,
         'test_optimizer_steps': 200,
         'attack_model': optimizee.mnist.KMnistConvModel,
-        'attack_model_ckpt': "./ckpt/attack_model/kmnist_cnn.pt",
+        'attack_model_ckpt': "../../ckpt/attack_model/kmnist_cnn.pt",
         'tests': {
             'optimizee': optimizee.mnist.KMnistAttack,
             'test_indexes': list(range(1, 3)),  # test image indexes
