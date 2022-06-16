@@ -32,14 +32,15 @@ def train_optimizer_attack(args):
     assert "Attack" in args.train_task
     task = train_task_list.tasks[args.train_task]
 
-    # Logging
-    wandb.init(
-        tags=None,
-        project='optml-project', 
-        entity='mismayil', 
-        name=args.exp_name, 
-        #id=f'{args.name}_{args.id}',
-        config=args
+    if args.wandb:
+        # Logging
+        wandb.init(
+            tags=None,
+            project='optml-project', 
+            entity='mismayil', 
+            name=args.exp_name, 
+            #id=f'{args.name}_{args.id}',
+            config=args
         )
 
     print("Training ZO optimizer...\nOptimizer: {}. Optimizee: {}".format(task["nn_optimizer"].__name__, task["optimizee"].__name__))
@@ -53,7 +54,6 @@ def train_optimizer_attack(args):
     attack_model.eval()
     attack_model.reset()  # not include parameters
 
-    
     if args.convex_model_dim!='0':
         convex_model_dim = int(args.convex_model_dim)
         dtype = get_precision_dtype(args.precision)
@@ -209,12 +209,13 @@ def train_optimizer_attack(args):
         with open(os.path.join(args.output_dir, "train_log.txt"), 'a+') as f:
             f.write(msg + '\n')
 
-        wandb.log({
-            'final_loss': final_loss / args.updates_per_epoch, 
-            'average_final_initial_loss_ratio': decrease_in_loss / args.updates_per_epoch,
-            'test_loss': test_loss_sum / num,
-            'test_loss_ratio': test_loss_ratio / num,
-        })
+        if args.wandb:
+            wandb.log({
+                'final_loss': final_loss / args.updates_per_epoch, 
+                'average_final_initial_loss_ratio': decrease_in_loss / args.updates_per_epoch,
+                'test_loss': test_loss_sum / num,
+                'test_loss_ratio': test_loss_ratio / num,
+            })
 
         if epoch % args.epochs_per_ckpt == 0:
             meta_optimizer.save(epoch, args.output_dir)
@@ -614,6 +615,7 @@ if __name__ == "__main__":
                         help='whether apply randon scaling on parameters, use "0" to disable it')
     parser.add_argument('--convex_model_dim', type=str, default="0",
                         help='dimension of the convex model, use "0" to disable it')
+    parser.add_argument('--wandb', action='store_true', help="Whether to use wandb")
 
     args = parser.parse_args()
     args.cuda = not args.no_cuda and torch.cuda.is_available()

@@ -1,4 +1,4 @@
-python ../../main_attack.py \
+python main_attack.py \
     --exp_name VarReduced_ZO_attack_cifar_scaling3_convex100 \
     --train_task VarReducedZOL2L-Attack-CIFAR10 \
     --gpu_num 0 \
