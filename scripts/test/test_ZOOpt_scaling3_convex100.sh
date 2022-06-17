@@ -3,6 +3,6 @@ python main_attack.py \
     --train_task ZOL2L-Attack \
     --gpu_num 0 \
     --train optimizer_train_optimizee_attack \
-    --ckpt_path ckpt_best \
+    --ckpt_path output/ZO_attack_mnist_test20_scaling3_convex100/ckpt_best \
     --save_loss \
     --save_fig
