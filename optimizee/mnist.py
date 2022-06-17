@@ -76,7 +76,7 @@ class MnistConvModel(MnistModel):
 
 class EMnistConvModel(MnistConvModel):
     def __init__(self):
-        super(MnistConvModel, self).__init__(output_dim=47)
+        super(EMnistConvModel, self).__init__(output_dim=47)
 
 
 class FMnistConvModel(MnistConvModel):
