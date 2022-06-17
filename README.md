@@ -32,7 +32,12 @@ As mentioned, this repository has been forked from the original [repo](https://g
 
 - [scripts](scripts)
 
-    This directory contains various training and testing scripts to run our experiments. We have named each script such that it is largely self-explanatory (i.e. specifies attack task, optimization trick used etc.). Note that all scripts should be run from the root directory to be able to resolve file paths correctly.
+    This directory contains various training and testing scripts to run our experiments. We have named each script such that it is largely self-explanatory (i.e. specifies attack task, optimization trick used etc.). Note that all scripts should be run from the root directory to be able to resolve file paths correctly. For example, you can run scripts as follows:
+
+    ```sh
+    cd ZO-L2L
+    bash scripts/test/test_ZOOptProp.sh
+    ```
 
 - [output](output)
 
