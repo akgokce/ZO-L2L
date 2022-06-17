@@ -256,15 +256,13 @@ def optimizer_train_optimizee_attack(args):
         if args.cuda:
             meta_model.cuda(args.gpu_num)
 
-        ckpt_path = os.path.join(args.output_dir, args.ckpt_path)
-
         # ZO-LSTM (leanred ZO optimizer)
         if "nn_opt" in task["tests"]:
             meta_optimizer = task["nn_optimizer"](optimizee.MetaModel(meta_model), args)
             meta_optimizer = set_precision(meta_optimizer, args.precision)
             if args.cuda:
                 meta_optimizer.cuda(args.gpu_num)
-            meta_optimizer.load(ckpt_path)
+            meta_optimizer.load(args.ckpt_path)
             meta_optimizer.eval()
             nn_opt_loss_array = []
 
@@ -298,7 +296,7 @@ def optimizer_train_optimizee_attack(args):
             nn_optimizer_no_query = set_precision(nn_optimizer_no_query, args.precision)
             if args.cuda:
                 nn_optimizer_no_query.cuda(args.gpu_num)
-            nn_optimizer_no_query.load(ckpt_path)
+            nn_optimizer_no_query.load(args.ckpt_path)
             nn_optimizer_no_query.eval()
             nn_opt_no_query_loss_array = []
 
@@ -313,7 +311,7 @@ def optimizer_train_optimizee_attack(args):
             nn_optimizer_no_update = set_precision(nn_optimizer_no_update, args.precision)
             if args.cuda:
                 nn_optimizer_no_update.cuda(args.gpu_num)
-            nn_optimizer_no_update.load(ckpt_path)
+            nn_optimizer_no_update.load(args.ckpt_path)
             nn_optimizer_no_update.eval()
             nn_opt_no_update_loss_array = []
 
@@ -328,7 +326,7 @@ def optimizer_train_optimizee_attack(args):
             nn_optimizer_guided = set_precision(nn_optimizer_guided, args.precision)
             if args.cuda:
                 nn_optimizer_guided.cuda(args.gpu_num)
-            nn_optimizer_guided.load(ckpt_path)
+            nn_optimizer_guided.load(args.ckpt_path)
             nn_optimizer_guided.eval()
             nn_opt_guided_loss_array = []
 
